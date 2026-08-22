@@ -38,20 +38,21 @@ const elLine = document.getElementById('fsLine');
 const elRomaji = document.getElementById('fsRomaji');
 const elEn = document.getElementById('fsEn');
 const elTitle = document.getElementById('fsTitle');
+const elScene = document.getElementById('fsScene');
+const elBar = document.querySelector('#feedSim .fs-progress span');
 
 let i = 0;
 const cycle = () => {
   const line = LINES[i % LINES.length];
+  const ep = EPISODES[Math.floor(i / 2) % EPISODES.length];
   elLine.innerHTML = line.jp;
   elRomaji.textContent = line.romaji;
   elEn.textContent = line.en;
-  elTitle.textContent = EPISODES[Math.floor(i / 2) % EPISODES.length].title + ' · ' + EPISODES[Math.floor(i / 2) % EPISODES.length].ep;
-  const scene = document.getElementById('fsScene');
-  scene.className = 'feed-sim fs-scene-' + (Math.floor(i / 2) % 3);
-  const bar = screen.querySelector('.fs-progress span');
-  bar.style.animation = 'none';
-  void bar.offsetWidth;
-  bar.style.animation = '';
+  elTitle.textContent = ep.title + ' · ' + ep.ep;
+  elScene.className = 'feed-sim fs-scene-' + (Math.floor(i / 2) % 3);
+  elBar.style.animation = 'none';
+  void elBar.offsetWidth;
+  elBar.style.animation = '';
   elLine.style.animation = 'none';
   void elLine.offsetWidth;
   elLine.style.animation = '';

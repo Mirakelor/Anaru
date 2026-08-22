@@ -28,6 +28,30 @@ asset_url() {
 OS="$(uname -s)"
 ARCH="$(uname -m)"
 
+install_linux_shortcut() {
+  local apps="$HOME/.local/share/applications"
+  local icons="$HOME/.local/share/icons/hicolor/512x512/apps"
+  mkdir -p "$apps" "$icons"
+  if [[ ! -f "$icons/anaru.png" ]]; then
+    echo "→ Fetching app icon…"
+    curl -fsSL --retry 3 -o "$icons/anaru.png" \
+      "https://raw.githubusercontent.com/$REPO/main/site/icon.png" || true
+  fi
+  cat > "$apps/anaru.desktop" <<EOF
+[Desktop Entry]
+Name=Anaru
+Comment=Learn Japanese by watching anime
+Exec=$HOME/.local/bin/anaru
+Icon=anaru
+Terminal=false
+Type=Application
+Categories=Education;Languages;
+StartupWMClass=anaru
+EOF
+  chmod +x "$apps/anaru.desktop"
+  command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$apps" 2>/dev/null || true
+}
+
 case "$OS" in
   Linux)
     if [[ "$ARCH" != "x86_64" ]]; then
@@ -48,6 +72,7 @@ case "$OS" in
       mkdir -p "$HOME/.local/bin"
       chmod +x "$TMP/anaru.AppImage"
       mv "$TMP/anaru.AppImage" "$HOME/.local/bin/anaru"
+      install_linux_shortcut
       echo "✔ Installed to $HOME/.local/bin/anaru"
       echo "  (add it to PATH if needed: export PATH=\"\$HOME/.local/bin:\$PATH\")"
       echo "  Run: anaru"

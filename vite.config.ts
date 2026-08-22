@@ -39,7 +39,9 @@ const dictNoEncoding: Plugin = {
 };
 
 export default defineConfig({
-  base: '/app/',
+  // base is set per build target: web/Vercel uses `/app/` (npm run build),
+  // Capacitor/Tauri use relative `./` (npm run build:app) so assets resolve
+  // under the local WebView's root path.
   plugins: [
     dictNoEncoding,
     react(),
@@ -55,7 +57,7 @@ export default defineConfig({
         background_color: '#000000',
         display: 'standalone',
         orientation: 'portrait-primary',
-        start_url: '/app/',
+        start_url: './',
         icons: [
           { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },

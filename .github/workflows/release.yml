@@ -25,7 +25,6 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
             libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
       - run: npm ci
-      - run: npm run build
       - name: Build bundles
         run: npx tauri build
       - name: Upload artifacts
@@ -48,7 +47,6 @@ jobs:
           cache: npm
       - uses: dtolnay/rust-toolchain@stable
       - run: npm ci
-      - run: npm run build
       - name: Build bundles
         run: npx tauri build
       - name: Upload artifacts
@@ -70,7 +68,6 @@ jobs:
           cache: npm
       - uses: dtolnay/rust-toolchain@stable
       - run: npm ci
-      - run: npm run build
       - name: Build bundle
         run: npx tauri build
       - name: Upload artifacts
@@ -96,7 +93,7 @@ jobs:
           java-version: '21'
       - uses: android-actions/setup-android@v3
       - run: npm ci
-      - run: npm run build
+      - run: npm run build:app
       - run: npx cap sync android
       - name: Write signing keystore
         if: env.HAS_KEYSTORE == 'true'
@@ -139,7 +136,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
-      - run: npm run build
+      - run: npm run build:app
       - run: npx cap sync ios
       - name: Import signing certificate
         if: env.HAS_CERT == 'true'
