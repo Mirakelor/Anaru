@@ -95,7 +95,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
       - uses: android-actions/setup-android@v3
       - run: npm ci
       - run: npm run build
@@ -164,7 +164,7 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           cd ios/App
-          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release \
+          xcodebuild -project App.xcodeproj -scheme App -configuration Release \
             -allowProvisioningUpdates -archivePath build/Anaru.xcarchive archive
           export_options="$TMPDIR/export.plist"
           /usr/libexec/PlistBuddy -c "Add :method string app-store" "$export_options"
@@ -175,7 +175,7 @@ jobs:
         if: env.HAS_CERT != 'true'
         run: |
           cd ios/App
-          xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug \
+          xcodebuild -project App.xcodeproj -scheme App -configuration Debug \
             -sdk iphonesimulator -derivedDataPath build CODE_SIGNING_ALLOWED=NO
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
