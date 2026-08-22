@@ -11,7 +11,9 @@ env:
 jobs:
   desktop-linux:
     name: Linux desktop (deb / rpm / AppImage)
-    runs-on: ubuntu-latest
+    # Ubuntu 26.04: bundles WebKitGTK 2.52. Older-runners' 2.44/2.46
+    # crashes its WebProcess on Wayland (EGL init failure) -> black window.
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
