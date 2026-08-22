@@ -45,10 +45,21 @@ mod stderr_guard {
     }
 }
 
+#[tauri::command]
+async fn fetch_text(url: String) -> Result<String, String> {
+    reqwest::get(&url)
+        .await
+        .map_err(|e| e.to_string())?
+        .text()
+        .await
+        .map_err(|e| e.to_string())
+}
+
 pub fn run() {
     #[cfg(target_os = "linux")]
     stderr_guard::quiet();
     tauri::Builder::default()
+        .invoke_handler(tauri::generate_handler![fetch_text])
         .setup(|_app| {
             #[cfg(target_os = "linux")]
             stderr_guard::restore();

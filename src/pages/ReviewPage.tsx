@@ -85,10 +85,18 @@ function ReviewSession({ item, remaining, onGraded }: ReviewSessionProps) {
             episodeId={item.word.episodeId}
             start={item.word.sceneStart}
             end={item.word.sceneEnd}
+            autoUnmute={listening && !revealed}
           />
         )}
 
         <div className="review-front">
+          {!revealed && (
+            <p className="review-tip">
+              {listening
+                ? 'Listen to the scene, recall the word, then reveal the answer.'
+                : 'Watch the scene, recall the word, then reveal the answer.'}
+            </p>
+          )}
           {listening && !revealed ? (
             <p className="review-hint">Listen and recall the word</p>
           ) : (
@@ -138,11 +146,13 @@ interface SceneVideoProps {
   episodeId: number | null;
   start: number | null;
   end: number | null;
+  autoUnmute?: boolean;
 }
 
-function SceneVideo({ episodeId, start, end }: SceneVideoProps) {
+function SceneVideo({ episodeId, start, end, autoUnmute = false }: SceneVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [src, setSrc] = useState<string | null>(null);
+  const [soundOn, setSoundOn] = useState(false);
 
   useEffect(() => {
     if (episodeId === null) return;
@@ -164,8 +174,28 @@ function SceneVideo({ episodeId, start, end }: SceneVideoProps) {
     const video = videoRef.current;
     if (!video || !src || start === null) return;
     video.currentTime = start;
-    video.play().catch(() => undefined);
-  }, [src, start]);
+    if (autoUnmute) {
+      // Listening cards need the audio; unmuted autoplay may be blocked, in
+      // which case we fall back to muted and let the user tap the speaker.
+      video.muted = false;
+      setSoundOn(true);
+      video.play().catch(() => {
+        video.muted = true;
+        setSoundOn(false);
+      });
+    } else {
+      video.play().catch(() => undefined);
+    }
+  }, [src, start, autoUnmute]);
+
+  const toggleSound = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    const next = !soundOn;
+    setSoundOn(next);
+    video.muted = !next;
+    if (next) video.play().catch(() => undefined);
+  };
 
   if (!src || start === null) return null;
 
@@ -174,7 +204,7 @@ function SceneVideo({ episodeId, start, end }: SceneVideoProps) {
       <video
         ref={videoRef}
         src={src}
-        muted
+        muted={!soundOn}
         loop
         playsInline
         onTimeUpdate={() => {
@@ -184,6 +214,22 @@ function SceneVideo({ episodeId, start, end }: SceneVideoProps) {
           }
         }}
       />
+      <button
+        type="button"
+        className={`review-sound ${soundOn ? 'on' : ''}`}
+        onClick={toggleSound}
+        aria-label={soundOn ? 'Mute scene' : 'Unmute scene'}
+      >
+        {soundOn ? (
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M3 10v4h4l5 5V5L7 10H3zm13.5 2a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z" />
+          </svg>
+        ) : (
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M3 10v4h4l5 5V5L7 10H3zm18.6 2 2.1-2.1-1.4-1.4-2.1 2.1-2.1-2.1-1.4 1.4 2.1 2.1-2.1 2.1 1.4 1.4 2.1-2.1 2.1 2.1 1.4-1.4-2.1-2.1z" />
+          </svg>
+        )}
+      </button>
     </div>
   );
 }

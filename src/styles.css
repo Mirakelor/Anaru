@@ -519,6 +519,26 @@ h2 {
   gap: 12px;
 }
 
+.sheet-head-side {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sheet-speak {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.sheet-speak:active {
+  transform: scale(0.94);
+}
+
 .sheet-word {
   font-family: var(--jp);
   font-size: 1.9rem;
@@ -830,6 +850,7 @@ h2 {
 }
 
 .review-scene {
+  position: relative;
   aspect-ratio: 9 / 12;
   background: #000;
 }
@@ -838,6 +859,29 @@ h2 {
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+
+.review-sound {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+}
+
+.review-sound.on {
+  color: var(--accent-2);
+}
+
+.review-tip {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin: 10px 0 0;
 }
 
 .review-front {

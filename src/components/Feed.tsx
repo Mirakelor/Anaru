@@ -92,6 +92,22 @@ function FeedClip({ clip, index, active, soundOn, onSoundChange }: FeedClipProps
   const episode = useLiveQuery(() => (active ? db.episodes.get(clip.episodeId) : undefined), [clip.episodeId, active]);
   const series = useLiveQuery(() => db.series.get(clip.seriesId), [clip.seriesId]);
   const settings = useLiveQuery(() => db.settings.toCollection().first(), []);
+  const wordSheet = useApp((s) => s.wordSheet);
+
+  // Pause while the word sheet is open, resume when it closes (TTS reads the
+  // word out loud during the lookup, so the scene audio must stop).
+  const wasPlayingRef = useRef(false);
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !src) return;
+    if (wordSheet) {
+      wasPlayingRef.current = !video.paused;
+      video.pause();
+    } else if (wasPlayingRef.current) {
+      wasPlayingRef.current = false;
+      video.play().catch(() => undefined);
+    }
+  }, [wordSheet, src]);
 
   useEffect(() => {
     if (!active) {

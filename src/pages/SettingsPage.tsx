@@ -99,6 +99,10 @@ export function SettingsPage() {
             onChange={(e) => updateSettings({ listeningCards: e.target.checked })}
           />
         </label>
+        <p className="settings-hint">
+          About a third of review cards hide the word and play the scene first — you listen, recall the word, then
+          reveal and grade it.
+        </p>
       </section>
 
       <section className="settings-section">

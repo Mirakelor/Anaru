@@ -1,6 +1,7 @@
 import { db, writeMediaFile, mediaExists } from '../db';
 import { parseSubtitles } from '../subtitles/parse';
 import { segmentCues } from '../subtitles/segment';
+import { fetchText } from '../net';
 import type { Clip, Cue, Episode, Series } from '../types';
 
 export interface EpisodeImport {
@@ -249,9 +250,13 @@ export async function ingestPack(
   onProgress?: (stage: string) => void,
   signal?: AbortSignal,
 ): Promise<number> {
-  const response = await fetch(manifestUrl, { signal });
-  if (!response.ok) throw new Error(`Could not load the pack manifest (${response.status}).`);
-  const manifest = (await response.json()) as PackManifest;
+  let manifest: PackManifest;
+  try {
+    manifest = JSON.parse(await fetchText(manifestUrl, signal)) as PackManifest;
+  } catch (err) {
+    if (err instanceof SyntaxError) throw new Error('That URL is not a valid content pack.');
+    throw err;
+  }
   if (!manifest || !Array.isArray(manifest.series)) throw new Error('That URL is not a valid content pack.');
 
   // Phase 1: download every subtitle track first. Nothing is written to the
@@ -268,15 +273,14 @@ export async function ingestPack(
   for (const packSeries of manifest.series) {
     for (const packEpisode of packSeries.episodes) {
       onProgress?.(`${packSeries.title} — episode ${packEpisode.index}…`);
-      const subtitleResponse = await fetch(resolveAgainst(manifestUrl, packEpisode.subtitle), { signal });
-      if (!subtitleResponse.ok) {
-        throw new Error(`Missing subtitles for ${packSeries.title} episode ${packEpisode.index}.`);
-      }
-      const subtitleText = await subtitleResponse.text();
+      const subtitleText = await fetchText(resolveAgainst(manifestUrl, packEpisode.subtitle), signal);
       let translationText: string | null = null;
       if (packEpisode.translation) {
-        const translationResponse = await fetch(resolveAgainst(manifestUrl, packEpisode.translation), { signal });
-        if (translationResponse.ok) translationText = await translationResponse.text();
+        try {
+          translationText = await fetchText(resolveAgainst(manifestUrl, packEpisode.translation), signal);
+        } catch {
+          translationText = null;
+        }
       }
       const duration = await probeDurationUrl(resolveAgainst(manifestUrl, packEpisode.video));
       fetched.push({ series: packSeries, episode: packEpisode, subtitleText, translationText, duration });

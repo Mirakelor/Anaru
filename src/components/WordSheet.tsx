@@ -4,6 +4,7 @@ import { db } from '../lib/db';
 import { lookupWord, type DictEntry } from '../lib/dict/lookup';
 import { createCard } from '../lib/srs/engine';
 import { toRomaji } from '../lib/nlp/romaji';
+import { speakJapanese } from '../lib/nlp/tts';
 import { useApp } from '../state/store';
 import { FuriganaText } from './FuriganaText';
 import type { Word } from '../lib/types';
@@ -13,6 +14,7 @@ export function WordSheet() {
   const close = useApp((s) => s.closeWordSheet);
   const [entries, setEntries] = useState<DictEntry[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const [ttsOk, setTtsOk] = useState(false);
 
   const saved = useLiveQuery(async () => {
     if (!sheet) return undefined;
@@ -23,6 +25,7 @@ export function WordSheet() {
     if (!sheet) return;
     setEntries(null);
     setFailed(false);
+    setTtsOk(speakJapanese(sheet.surface));
     let cancelled = false;
     lookupWord(sheet.surface, sheet.baseForm, sheet.reading)
       .then((result) => !cancelled && setEntries(result))
@@ -82,7 +85,21 @@ export function WordSheet() {
               {sheet.reading && <span className="sheet-romaji"> {toRomaji(sheet.reading)}</span>}
             </p>
           </div>
-          {best?.jlpt && <span className={`jlpt-badge n${best.jlpt}`}>N{best.jlpt}</span>}
+          <div className="sheet-head-side">
+            {ttsOk && (
+              <button
+                type="button"
+                className="sheet-speak"
+                onClick={() => speakJapanese(sheet.surface)}
+                aria-label="Play pronunciation"
+              >
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                  <path d="M3 10v4h4l5 5V5L7 10H3zm13.5 2a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z" />
+                </svg>
+              </button>
+            )}
+            {best?.jlpt && <span className={`jlpt-badge n${best.jlpt}`}>N{best.jlpt}</span>}
+          </div>
         </div>
 
         {entries === null && !failed && <p className="sheet-status">Looking up…</p>}
