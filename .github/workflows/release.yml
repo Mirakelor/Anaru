@@ -201,6 +201,6 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: Anaru ${{ github.ref_name }}
-          draft: true
+          draft: false
           files: artifacts/**
           generate_release_notes: true
