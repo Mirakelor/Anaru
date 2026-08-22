@@ -1,8 +1,5 @@
 // Site-wide deployment configuration. Edit these when deploying.
 
-export const APP_DOMAIN = 'anaru.sonder.eu.org';
-export const CONTACT_EMAIL = 'mirakelor@sonder.eu.org';
-
 /**
  * Default content pack loaded automatically after onboarding.
  * Deploy a pack (tools/pack) to any static host and put its manifest URL

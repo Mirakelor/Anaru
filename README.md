@@ -1,4 +1,4 @@
-# Anaru — Learn Japanese by watching anime
+# Anaru 📺 — Learn Japanese by watching anime
 
 Free, offline, no-account Japanese learning app that turns anime scenes into
 bite-sized lessons. Cross-platform: Web/PWA, Android, iOS, Windows, macOS, Linux.
@@ -12,12 +12,12 @@ bite-sized lessons. Cross-platform: Web/PWA, Android, iOS, Windows, macOS, Linux
 - Listening cards, stats, streaks, daily goals
 - Content packs: load remote libraries from any URL, or import your own files
 
-## Stack
+## 🛠️ Stack
 
 React 18 + TypeScript + Vite · Dexie/IndexedDB (data) · OPFS (media) ·
 kuromoji (tokenization) · JMdict (dictionary) · ts-fsrs (SRS) · PWA (offline)
 
-## Download & install
+## ⬇️ Download & install
 
 Prebuilt bundles are published to GitHub Releases on every `v*` tag
 (Linux .deb/.rpm/.AppImage, macOS .dmg, Android APK — built by GitHub
@@ -37,7 +37,7 @@ Or grab a bundle manually from the Releases page:
 
 Web/PWA: deploy and open in any browser — installable from the address bar.
 
-## Quickstart
+## 🚀 Quickstart
 
 ```bash
 npm install
@@ -49,7 +49,7 @@ npm run build        # production build + PWA service worker
 npm run preview      # serve the production build
 ```
 
-## Content
+## 📦 Content
 
 ### Importing your own files (in-app wizard)
 
@@ -86,12 +86,14 @@ How to provide the English track:
   both files should share the same timeline (WebRip subtitles with WebRip
   video, BDRip with BDRip).
 
-### Content packs and the default source
+### 📦 Content packs and the default source
 
-The Frieren (葬送のフリーレン) starter pack is hosted on Backblaze B2 and
-auto-imported after onboarding when `DEFAULT_PACK_URL` is set in
-`src/lib/config.ts`. Any additional packs you host (B2, R2, NAS, any static
-server with Range + CORS) can be loaded via Library → Load pack.
+The Frieren (葬送のフリーレン) starter pack is served through the
+Cloudflare CDN at `https://bb.sonder.eu.org/manifest.json` (Backblaze B2
+origin + Bandwidth Alliance — B2 download fees are zero) and auto-imported
+after onboarding via `DEFAULT_PACK_URL` in `src/lib/config.ts`. Any
+additional packs you host (B2, R2, NAS, any static server with Range + CORS)
+can be loaded via Library → Load pack.
 
 1. **Import your own files** (Library → Add series): pick video + Japanese
    subtitle (SRT/ASS) + optional translation subtitle. The app cuts the video
@@ -157,7 +159,7 @@ with:
 npm run icons:build
 ```
 
-## Legal posture
+## ⚖️ Legal posture
 
 Anaru is an educational tool. It plays **short excerpts** of media you provide
 or point it at, annotated with furigana/romaji/translations for language
@@ -168,7 +170,7 @@ hosts no media. Rights remain with the respective rights-holders; the Terms of
 Service include a takedown contact. You are responsible for the media you
 import and the packs you distribute.
 
-## Data sources
+## 📚 Data sources
 
 - **Dictionary**: [JMdict](https://www.edrdg.org/jmdict/jmdictdb.html)
   (EDICT/JMdict, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)),
@@ -182,7 +184,7 @@ import and the packs you distribute.
   `vite.config.ts` because the Node loader imports `fs`/`path`.
 - **SRS**: [ts-fsrs](https://github.com/ts-fsrs/ts-fsrs) (MIT).
 
-## Deployment
+## 🌐 Deployment
 
 ### Web / PWA
 
@@ -239,7 +241,7 @@ sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file \
 
 The Tauri window embeds the same web app (480×900 default, phone-like).
 
-## Testing
+## 🧪 Testing
 
 - `npm test` — 46 unit tests: kana→romaji, furigana alignment, SRT/ASS
   parsing, clip segmentation, tokenizer, dictionary lookup, FSRS scheduling,
@@ -294,7 +296,7 @@ privacy policy URL, and screenshots.
 Bundles are unsigned (SmartScreen may warn). Store publishing is not planned;
 distribute the `.msi`/`.exe` from Releases directly.
 
-## Project layout
+## 🗂️ Project layout
 
 ```
 src/            app
