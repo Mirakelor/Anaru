@@ -36,7 +36,7 @@ dependencies = [
 name = "anaru"
 version = "0.1.0"
 dependencies = [
- "glib",
+ "libc",
  "serde",
  "serde_json",
  "tauri",

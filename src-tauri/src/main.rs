@@ -21,21 +21,6 @@ fn quiet_startup_noise() {
             std::env::set_var("GIO_MODULE_DIR", modules);
         }
     }
-
-    // Older WebKitGTK builds still emit a non-fatal
-    // "Could not create default EGL display … Aborting…" warning. Swallow
-    // just that line; everything else keeps printing.
-    glib::log_set_handler(
-        None,
-        glib::LogLevels::LEVEL_WARNING | glib::LogLevels::LEVEL_CRITICAL,
-        false,
-        false,
-        |_domain: Option<&str>, _level: glib::LogLevel, msg: &str| {
-            if !(msg.contains("EGL") && msg.contains("Aborting")) {
-                eprintln!("{msg}");
-            }
-        },
-    );
 }
 
 fn main() {
