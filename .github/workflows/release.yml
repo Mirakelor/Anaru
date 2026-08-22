@@ -177,13 +177,15 @@ jobs:
           cd ios/App
           xcodebuild -project App.xcodeproj -scheme App -configuration Debug \
             -sdk iphonesimulator -derivedDataPath build CODE_SIGNING_ALLOWED=NO
+          ditto -c -k --keepParent build/Build/Products/Debug-iphonesimulator/App.app \
+            build/Anaru-simulator.app.zip
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ios-bundles
           path: |
             ios/App/build/export/*.ipa
-            ios/App/build/Build/Products/Debug-iphonesimulator/*.app
+            ios/App/build/Anaru-simulator.app.zip
 
   release:
     name: Publish release
