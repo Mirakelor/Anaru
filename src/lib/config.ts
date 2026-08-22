@@ -9,4 +9,4 @@ export const CONTACT_EMAIL = 'mirakelor@sonder.eu.org';
  * here — e.g. 'https://anaru.sonder.eu.org/packs/manifest.json'.
  * Leave empty to ship without bundled content.
  */
-export const DEFAULT_PACK_URL = 'https://f004.backblazeb2.com/file/Helitra/manifest.json';
+export const DEFAULT_PACK_URL = 'https://bb.sonder.eu.org/manifest.json';
