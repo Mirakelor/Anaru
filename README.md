@@ -64,6 +64,28 @@ Library → Add series accepts, per episode:
 The wizard takes one series name, then one video + subtitle set per episode.
 Files are copied into the device's private storage (OPFS); nothing is uploaded.
 
+### Bilingual mode (Japanese + English)
+
+The subtitle mode "Japanese + English" shows the Japanese line with furigana
+plus the English translation underneath. It lights up automatically whenever
+an episode has a **translation subtitle track**; without one, that mode simply
+shows Japanese only. Nothing else needs configuring.
+
+How to provide the English track:
+
+- **In-app wizard** (Library → Add series): the third file picker per episode
+  is "English subtitles (optional)". Pick a `.srt`/`.ass` file whose timing
+  matches the Japanese one.
+- **Content packs**: add a `translation` entry per episode in the manifest
+  (or place `e01.en.srt` next to `e01.ja.srt` — the pack builder wires it
+  automatically):
+  ```json
+  { "index": 1, "video": "…", "subtitle": "…", "translation": "…" }
+  ```
+- Translation cues are matched to Japanese cues by start time (±0.05 s), so
+  both files should share the same timeline (WebRip subtitles with WebRip
+  video, BDRip with BDRip).
+
 ### Content packs and the default source
 
 The Frieren (葬送のフリーレン) starter pack is hosted on Backblaze B2 and
@@ -230,6 +252,47 @@ The Tauri window embeds the same web app (480×900 default, phone-like).
   dictionary keep working from cache.
 - Pack pipeline check: `node tools/pack/build-pack.mjs` + `serve.mjs`, then
   load the manifest URL in the app and watch the feed.
+
+## App Store & Google Play publishing
+
+CI (`push v*` tag) already produces signed artifacts when the repo secrets
+below are set; without them it falls back to unsigned/debug builds.
+
+### Google Play
+
+Set these repo secrets, then push a `v*` tag:
+
+| Secret | Value |
+|---|---|
+| `ANDROID_KEYSTORE_BASE64` | base64 of your release keystore (`keytool -genkeypair -v -keystore anaru-release.jks -alias anaru -keyalg RSA -keysize 2048 -validity 10000`) |
+| `ANDROID_KEYSTORE_PASSWORD` / `ANDROID_KEY_PASSWORD` | keystore / key passwords |
+| `ANDROID_KEY_ALIAS` | key alias |
+
+The release job builds a signed `app-release.aab` (Play Console upload) and
+`app-release.apk`. You still need: a Play Console developer account ($25),
+store listing assets (screenshots, description, privacy policy URL after the
+Vercel deploy), and the app signing key configured in Play Console (upload
+key = the keystore above).
+
+### App Store (iOS)
+
+Set these repo secrets:
+
+| Secret | Value |
+|---|---|
+| `APPLE_CERT_P12` | base64 of your distribution certificate `.p12` |
+| `APPLE_CERT_PASSWORD` | p12 password |
+| `APPLE_PROVISIONING_PROFILE` | base64 of the App Store provisioning profile (`.mobileprovision`) |
+| `APPLE_TEAM_ID` | your Team ID |
+
+The iOS job archives and exports an app-store `.ipa`. You still need: an
+Apple Developer account ($99/year), the App Store Connect app record,
+privacy policy URL, and screenshots.
+
+### Windows
+
+Bundles are unsigned (SmartScreen may warn). Store publishing is not planned;
+distribute the `.msi`/`.exe` from Releases directly.
 
 ## Project layout
 

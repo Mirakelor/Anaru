@@ -37,6 +37,28 @@ jobs:
             src-tauri/target/release/bundle/rpm/*.rpm
             src-tauri/target/release/bundle/appimage/*.AppImage
 
+  desktop-windows:
+    name: Windows desktop (msi / exe)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - run: npm ci
+      - run: npm run build
+      - name: Build bundles
+        run: npx tauri build
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-bundles
+          path: |
+            src-tauri/target/release/bundle/msi/*.msi
+            src-tauri/target/release/bundle/nsis/*.exe
+
   desktop-macos:
     name: macOS desktop (dmg)
     runs-on: macos-latest
@@ -60,8 +82,10 @@ jobs:
             src-tauri/target/release/bundle/macos/*.app
 
   android:
-    name: Android (APK)
+    name: Android (signed release AAB/APK, or debug APK)
     runs-on: ubuntu-latest
+    env:
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -76,18 +100,94 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npx cap sync android
-      - name: Build APK
+      - name: Write signing keystore
+        if: env.HAS_KEYSTORE == 'true'
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/keystore.jks
+          cat > android/keystore.properties <<EOF
+          storeFile=keystore.jks
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          EOF
+      - name: Build signed release (AAB + APK)
+        if: env.HAS_KEYSTORE == 'true'
+        working-directory: android
+        run: ./gradlew bundleRelease assembleRelease --no-daemon
+      - name: Build debug APK
+        if: env.HAS_KEYSTORE != 'true'
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
-          path: android/app/build/outputs/apk/debug/*.apk
+          path: |
+            android/app/build/outputs/apk/debug/*.apk
+            android/app/build/outputs/apk/release/*.apk
+            android/app/build/outputs/bundle/release/*.aab
+
+  ios:
+    name: iOS (signed device IPA, or simulator app)
+    runs-on: macos-latest
+    env:
+      HAS_CERT: ${{ secrets.APPLE_CERT_P12 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx cap sync ios
+      - name: Import signing certificate
+        if: env.HAS_CERT == 'true'
+        env:
+          APPLE_CERT_P12: ${{ secrets.APPLE_CERT_P12 }}
+          APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
+          APPLE_PROVISIONING_PROFILE: ${{ secrets.APPLE_PROVISIONING_PROFILE }}
+        run: |
+          echo "$APPLE_CERT_P12" | base64 --decode > /tmp/cert.p12
+          security create-keychain -p temp build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p temp build.keychain
+          security import /tmp/cert.p12 -k build.keychain -P "$APPLE_CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k temp build.keychain
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          echo "$APPLE_PROVISIONING_PROFILE" | base64 --decode > "$HOME/Library/MobileDevice/Provisioning Profiles/anaru.mobileprovision"
+      - name: Build device IPA (app-store export)
+        if: env.HAS_CERT == 'true'
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release \
+            -allowProvisioningUpdates -archivePath build/Anaru.xcarchive archive
+          export_options="$TMPDIR/export.plist"
+          /usr/libexec/PlistBuddy -c "Add :method string app-store" "$export_options"
+          /usr/libexec/PlistBuddy -c "Add :teamID string $APPLE_TEAM_ID" "$export_options"
+          /usr/libexec/PlistBuddy -c "Add :signingStyle string manual" "$export_options"
+          xcodebuild -exportArchive -archivePath build/Anaru.xcarchive -exportPath build/export -exportOptionsPlist "$export_options"
+      - name: Build simulator app (no signing required)
+        if: env.HAS_CERT != 'true'
+        run: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug \
+            -sdk iphonesimulator -derivedDataPath build CODE_SIGNING_ALLOWED=NO
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-bundles
+          path: |
+            ios/App/build/export/*.ipa
+            ios/App/build/Build/Products/Debug-iphonesimulator/*.app
 
   release:
     name: Publish release
-    needs: [desktop-linux, desktop-macos, android]
+    needs: [desktop-linux, desktop-windows, desktop-macos, android, ios]
     runs-on: ubuntu-latest
     permissions:
       contents: write
