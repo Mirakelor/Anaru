@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anaru: Learn Japanese by watching anime</title>
+<meta name="description" content="Anaru turns short anime scenes into Japanese you actually absorb. Furigana on every kanji, tap a word to save it, review it like Anki. Free, offline, on every platform.">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<meta property="og:title" content="Anaru: Learn Japanese by watching anime">
+<meta property="og:description" content="Real scenes, furigana on every kanji, tap a word to save it, review it like Anki. Free and offline.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <a class="brand" href="/">
+    <img src="/icons/icon-192.png" alt="" width="30" height="30">
+    <span>Anaru</span>
+  </a>
+  <nav class="nav-right">
+    <a class="nav-link" href="/learn/">Words</a>
+    <a class="nav-cta" href="/app/">Open the app</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <h1 class="reveal">The anime you love,<br>now teaching you Japanese.</h1>
+  <p class="sub reveal d1">Real scenes. Furigana on every kanji. Tap a word to save it.<br>Free, offline, no account, no ads.</p>
+  <div class="cta cta-row reveal d2">
+    <a class="appbtn" href="/app/">
+      <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v7c0 .83.67 1.5 1.5 1.5S5 17.33 5 16.5v-7C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v7c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-7c0-.83-.67-1.5-1.5-1.5zm-4.97-5.84 1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48C13.85 1.23 12.95 1 12 1c-.96 0-1.86.23-2.66.63L7.85.15c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31C6.97 3.26 6 5.01 6 7h12c0-1.99-.97-3.75-2.47-4.84zM10 5H9V4h1v1zm5 0h-1V4h1v1z"/></svg>
+      Open the app
+    </a>
+    <a class="appbtn appbtn-alt" href="/privacy-policy">Privacy first</a>
+  </div>
+
+  <div class="hero-stage reveal d2">
+    <div class="spotlight" aria-hidden="true"></div>
+    <div class="device device-lg">
+      <div class="device-screen" id="feedSim">
+        <div class="feed-sim">
+          <div class="fs-top"><span id="fsTitle">星の旅路 · EP.03</span><span>★</span></div>
+          <div class="fs-progress"><span></span></div>
+          <p class="fs-line" id="fsLine"></p>
+          <p class="fs-romaji" id="fsRomaji"></p>
+          <p class="fs-en" id="fsEn"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="library">
+  <div class="lib-head">
+    <h2 class="reveal">Bring the anime you already want to watch.</h2>
+  </div>
+  <div class="posters reveal d1">
+    <div class="poster poster-real">
+      <img src="/posters/frieren.jpg" alt="Sousou no Frieren 2nd Season">
+      <span class="poster-tag">Now in your feed</span>
+    </div>
+    <div class="poster"><span>Any anime you can get video for</span></div>
+    <div class="poster"><span>Shows you own on disc or video</span></div>
+    <div class="poster"><span>Fansub files you already have</span></div>
+    <div class="poster"><span>Classics, movies, OVAs</span></div>
+    <div class="poster"><span>Content packs from your NAS</span></div>
+  </div>
+</section>
+
+<section class="review">
+  <p class="kicker reveal">And then</p>
+  <h2 class="reveal d1">Review what you saved.</h2>
+  <p class="sub reveal d2">Every word you tap becomes a spaced-repetition card, with the scene it came from. You review the words you actually met.</p>
+  <div class="hero-stage reveal d1">
+    <div class="spotlight" aria-hidden="true"></div>
+    <div class="device">
+      <div class="device-screen">
+        <div class="feed-sim" style="justify-content:center">
+          <div class="review-card-sim">
+            <p class="rc-word"><ruby>覚悟<rt>かくご</rt></ruby></p>
+            <p class="rc-sentence">これは、覚悟の一撃！</p>
+            <div class="rc-grades">
+              <span class="rc-grade">Again</span>
+              <span class="rc-grade">Hard</span>
+              <span class="rc-grade">Good</span>
+              <span class="rc-grade">Easy</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="features">
+  <div class="feat reveal">
+    <h3>Furigana on every kanji</h3>
+    <p>No jumping to a dictionary. The reading sits right above the character, every time.</p>
+  </div>
+  <div class="feat reveal">
+    <h3>Subtitles that grow with you</h3>
+    <p>Five modes, from romaji on day one to video only with no subtitles at all.</p>
+  </div>
+  <div class="feat reveal">
+    <h3>Nothing gets spoiled</h3>
+    <p>Haven't watched a series yet? Hide it, and its clips stay out of your feed.</p>
+  </div>
+</section>
+
+<section class="band">
+  <h2 class="reveal">Your anime. Your pace.</h2>
+  <p class="reveal d1">Your media files stay on your device. Clips are cut locally, words are saved locally, reviews run offline. No account, no uploads, no ads.</p>
+</section>
+
+<section class="final">
+  <h2 class="reveal">Start scrolling.</h2>
+  <div class="cta cta-row reveal d1">
+    <a class="appbtn" href="/app/">Open the app</a>
+  </div>
+  <p class="fineprint reveal d1">Free on every platform. Works offline, installs like an app.</p>
+</section>
+
+<footer class="footer">
+  <span>Anaru</span>
+  <nav>
+    <a href="/learn/">Words</a>
+    <a href="/privacy-policy">Privacy</a>
+    <a href="/terms-of-service">Terms</a>
+    <a href="/app/">App</a>
+  </nav>
+  <span class="muted">© 2026</span>
+</footer>
+
+<script src="/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,255 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db, mediaUrl } from '../lib/db';
+import type { Clip, Cue, Episode, Series } from '../lib/types';
+import { cuesForClip } from '../lib/import/library';
+import { useApp } from '../state/store';
+import { FuriganaText } from './FuriganaText';
+import { useTokenized } from '../lib/nlp/useTokenized';
+
+function shuffle<T>(items: T[]): T[] {
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+export function FeedPage() {
+  const filter = useApp((s) => s.feedSeriesFilter);
+  const series = useLiveQuery(() => db.series.toArray(), []);
+  const clips = useLiveQuery(async () => {
+    const hidden = new Set((await db.series.filter((s) => s.spoilerHidden).toArray()).map((s) => s.id));
+    const all = await db.clips.toArray();
+    return all.filter((c) => (filter ? c.seriesId === filter : !hidden.has(c.seriesId)));
+  }, [filter]);
+
+  const ordered = useMemo(() => (clips ? shuffle(clips) : []), [clips]);
+  const [current, setCurrent] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setCurrent(Number((entry.target as HTMLElement).dataset.index));
+          }
+        }
+      },
+      { root: container, threshold: 0.6 },
+    );
+    container.querySelectorAll('[data-index]').forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [ordered.length]);
+
+  if (!series || !clips) return <div className="page-loading" />;
+
+  if (ordered.length === 0) {
+    return (
+      <div className="feed-empty">
+        <p className="feed-empty-title">Nothing to watch yet</p>
+        <p className="feed-empty-sub">
+          Every series you add becomes a feed of short scenes. Import your own anime from the Library, or load a
+          content pack.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="feed" ref={containerRef}>
+      {ordered.map((clip, i) => (
+        <FeedClip key={clip.id} clip={clip} index={i} active={i === current} />
+      ))}
+    </div>
+  );
+}
+
+interface FeedClipProps {
+  clip: Clip;
+  index: number;
+  active: boolean;
+}
+
+function FeedClip({ clip, index, active }: FeedClipProps) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [src, setSrc] = useState<string | null>(null);
+  const [cues, setCues] = useState<Cue[] | null>(null);
+  const [time, setTime] = useState(clip.start);
+  const [paused, setPaused] = useState(false);
+  const [soundOn, setSoundOn] = useState(false);
+  const [ready, setReady] = useState(false);
+
+  const episode = useLiveQuery(() => (active ? db.episodes.get(clip.episodeId) : undefined), [clip.episodeId, active]);
+  const series = useLiveQuery(() => db.series.get(clip.seriesId), [clip.seriesId]);
+  const settings = useLiveQuery(() => db.settings.toCollection().first(), []);
+
+  useEffect(() => {
+    if (!active) {
+      setSrc(null);
+      setCues(null);
+      setReady(false);
+      return;
+    }
+    let cancelled = false;
+    db.episodes.get(clip.episodeId).then((ep) => {
+      if (!ep || cancelled) return;
+      if (ep.videoUrl) {
+        if (!cancelled) setSrc(ep.videoUrl);
+      } else {
+        mediaUrl(ep.videoPath).then((url) => !cancelled && setSrc(url));
+      }
+    });
+    cuesForClip(clip).then((result) => !cancelled && setCues(result));
+    return () => {
+      cancelled = true;
+    };
+  }, [clip, active]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !src) return;
+    if (!active) {
+      video.pause();
+      return;
+    }
+    const seekAndPlay = () => {
+      if (Math.abs(video.currentTime - clip.start) > 0.3 || video.ended) {
+        video.currentTime = clip.start;
+      }
+      video.playbackRate = settings?.playbackRate ?? 1;
+      video.play().catch(() => setPaused(true));
+      setPaused(false);
+    };
+    if (video.readyState >= 1) {
+      seekAndPlay();
+    } else {
+      video.addEventListener('loadedmetadata', seekAndPlay, { once: true });
+    }
+    return () => video.removeEventListener('loadedmetadata', seekAndPlay);
+  }, [active, src, clip.start, settings?.playbackRate]);
+
+  useEffect(() => {
+    setReady(false);
+  }, [src]);
+
+  const onTimeUpdate = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const t = video.currentTime;
+    setTime(t);
+    if (t >= clip.end - 0.03) {
+      if (settings?.autoReplay ?? true) {
+        video.currentTime = clip.start;
+      } else {
+        video.pause();
+        setPaused(true);
+      }
+    }
+  }, [clip.start, clip.end, settings?.autoReplay]);
+
+  const togglePause = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      video.play().catch(() => undefined);
+      setPaused(false);
+      setSoundOn(true);
+    } else {
+      video.pause();
+      setPaused(true);
+    }
+  };
+
+  const activeCue = cues?.find((cue) => time >= cue.start && time < cue.end) ?? null;
+  const mode = settings?.subtitleMode ?? 2;
+  const showRomaji = mode === 0 || mode === 1;
+  const showJapanese = mode !== 0 && mode !== 4;
+  const showEnglish = mode === 3;
+
+  return (
+    <div className="feed-item" data-index={index}>
+      <div className="feed-video-wrap" onClick={togglePause}>
+        {src && (
+          <video
+            ref={videoRef}
+            src={src}
+            muted={!soundOn}
+            playsInline
+            preload="metadata"
+            onTimeUpdate={onTimeUpdate}
+            onCanPlay={() => setReady(true)}
+          />
+        )}
+        {active && !ready && <div className="feed-item-loading" />}
+        {paused && (
+          <button type="button" className="feed-play-badge" aria-label="Play">
+            <svg viewBox="0 0 24 24" width="34" height="34" fill="currentColor">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </button>
+        )}
+      </div>
+
+      <div className="feed-top">
+        <span className="feed-series">{series?.title ?? '…'}</span>
+        <span className="feed-episode">{episode?.title ?? ''}</span>
+      </div>
+
+      <button
+        type="button"
+        className={`feed-sound ${soundOn ? 'on' : ''}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          setSoundOn((s) => !s);
+        }}
+        aria-label={soundOn ? 'Mute' : 'Unmute'}
+      >
+        {soundOn ? (
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M3 10v4h4l5 5V5L7 10H3zm13.5 2a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z" />
+          </svg>
+        ) : (
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M3 10v4h4l5 5V5L7 10H3zm18.6 2 2.1-2.1-1.4-1.4-2.1 2.1-2.1-2.1-1.4 1.4 2.1 2.1-2.1 2.1 1.4 1.4 2.1-2.1 2.1 2.1 1.4-1.4-2.1-2.1z" />
+          </svg>
+        )}
+      </button>
+
+      <div className="feed-subtitles" onClick={togglePause}>
+        {activeCue && <SubtitleBlock cue={activeCue} clip={clip} episode={episode ?? null} series={series ?? null} showRomaji={showRomaji} showJapanese={showJapanese} showEnglish={showEnglish} />}
+      </div>
+    </div>
+  );
+}
+
+interface SubtitleBlockProps {
+  cue: Cue;
+  clip: Clip;
+  episode: Episode | null;
+  series: Series | null;
+  showRomaji: boolean;
+  showJapanese: boolean;
+  showEnglish: boolean;
+}
+
+function SubtitleBlock({ cue, clip, episode, series, showRomaji, showJapanese, showEnglish }: SubtitleBlockProps) {
+  const line = useTokenized(cue.text);
+  return (
+    <div className="subtitle-block">
+      {showRomaji && (
+        <p className="subtitle-romaji">{line ? line.romaji : ''}</p>
+      )}
+      {showJapanese && (
+        <p className="subtitle-jp">
+          <FuriganaText text={cue.text} clip={clip} episode={episode} series={series} cue={cue} translation={cue.translation} />
+        </p>
+      )}
+      {showEnglish && cue.translation && <p className="subtitle-en">{cue.translation}</p>}
+    </div>
+  );
+}
