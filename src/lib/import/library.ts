@@ -261,7 +261,7 @@ export async function ingestPack(
 
   // Phase 1: download every subtitle track first. Nothing is written to the
   // database until the whole pack is fetched, so a failed load never leaves
-  // half-imported series behind.
+  // half-imported series behind. Downloads run with a small concurrency cap.
   type Fetched = {
     series: PackSeries;
     episode: PackEpisode;
@@ -269,9 +269,18 @@ export async function ingestPack(
     translationText: string | null;
     duration: number;
   };
-  const fetched: Fetched[] = [];
+  const tasks: { series: PackSeries; episode: PackEpisode }[] = [];
   for (const packSeries of manifest.series) {
     for (const packEpisode of packSeries.episodes) {
+      tasks.push({ series: packSeries, episode: packEpisode });
+    }
+  }
+  const fetched = new Array<Fetched>(tasks.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < tasks.length) {
+      const idx = next++;
+      const { series: packSeries, episode: packEpisode } = tasks[idx];
       onProgress?.(`${packSeries.title} — episode ${packEpisode.index}…`);
       const subtitleText = await fetchText(resolveAgainst(manifestUrl, packEpisode.subtitle), signal);
       let translationText: string | null = null;
@@ -283,9 +292,10 @@ export async function ingestPack(
         }
       }
       const duration = await probeDurationUrl(resolveAgainst(manifestUrl, packEpisode.video));
-      fetched.push({ series: packSeries, episode: packEpisode, subtitleText, translationText, duration });
+      fetched[idx] = { series: packSeries, episode: packEpisode, subtitleText, translationText, duration };
     }
-  }
+  };
+  await Promise.all(Array.from({ length: Math.min(3, tasks.length) }, () => worker()));
 
   // Phase 2: everything is downloaded — now write to the database.
   let clips = 0;

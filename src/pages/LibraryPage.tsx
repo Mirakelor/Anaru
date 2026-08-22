@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, deleteMediaFile } from '../lib/db';
 import type { Series } from '../lib/types';
 import { useApp } from '../state/store';
 import { ImportWizard } from '../components/ImportWizard';
 import { PackModal } from '../components/PackModal';
+import { ingestPack } from '../lib/import/library';
+import { DEFAULT_PACK_URL } from '../lib/config';
 
 export function LibraryPage() {
   const [importOpen, setImportOpen] = useState(false);
@@ -13,6 +15,25 @@ export function LibraryPage() {
   const setTab = useApp((s) => s.setTab);
   const setFilter = useApp((s) => s.setFeedSeriesFilter);
   const [confirmDelete, setConfirmDelete] = useState<Series | null>(null);
+  const [autoImporting, setAutoImporting] = useState(false);
+  const [autoStage, setAutoStage] = useState('');
+  const autoImportTried = useRef(false);
+
+  // An empty library auto-loads the built-in starter pack (once), so the app
+  // shows its bundled series even if onboarding was completed long ago.
+  useEffect(() => {
+    if (!series || series.length > 0 || autoImportTried.current || !DEFAULT_PACK_URL) return;
+    autoImportTried.current = true;
+    setAutoImporting(true);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 120_000);
+    ingestPack(DEFAULT_PACK_URL, setAutoStage, controller.signal)
+      .catch(() => undefined)
+      .finally(() => {
+        clearTimeout(timer);
+        setAutoImporting(false);
+      });
+  }, [series]);
 
   if (!series) return <div className="page-loading" />;
 
@@ -59,11 +80,20 @@ export function LibraryPage() {
 
       {series.length === 0 && (
         <div className="library-empty">
-          <p>Your library is empty.</p>
-          <p className="muted">
-            Load a content pack, or add your own anime with Japanese subtitles. The pack builder in the repo turns a
-            folder of videos and subtitle files into a pack.
-          </p>
+          {autoImporting ? (
+            <>
+              <p>Loading the starter pack…</p>
+              <p className="muted">{autoStage || 'Downloading subtitles…'}</p>
+            </>
+          ) : (
+            <>
+              <p>Your library is empty.</p>
+              <p className="muted">
+                Load a content pack, or add your own anime with Japanese subtitles. The pack builder in the repo turns a
+                folder of videos and subtitle files into a pack.
+              </p>
+            </>
+          )}
         </div>
       )}
 

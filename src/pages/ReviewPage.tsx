@@ -153,6 +153,11 @@ function SceneVideo({ episodeId, start, end, autoUnmute = false }: SceneVideoPro
   const videoRef = useRef<HTMLVideoElement>(null);
   const [src, setSrc] = useState<string | null>(null);
   const [soundOn, setSoundOn] = useState(false);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    setReady(false);
+  }, [src, start]);
 
   useEffect(() => {
     if (episodeId === null) return;
@@ -207,6 +212,9 @@ function SceneVideo({ episodeId, start, end, autoUnmute = false }: SceneVideoPro
         muted={!soundOn}
         loop
         playsInline
+        onCanPlay={() => setReady(true)}
+        onLoadedData={() => setReady(true)}
+        onError={() => setReady(true)}
         onTimeUpdate={() => {
           const video = videoRef.current;
           if (video && end !== null && video.currentTime >= end) {
@@ -214,6 +222,12 @@ function SceneVideo({ episodeId, start, end, autoUnmute = false }: SceneVideoPro
           }
         }}
       />
+      {!ready && (
+        <div className="feed-item-loading">
+          <span className="feed-loading-spinner" />
+          <span className="feed-loading-label">Loading…</span>
+        </div>
+      )}
       <button
         type="button"
         className={`review-sound ${soundOn ? 'on' : ''}`}
