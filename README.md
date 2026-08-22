@@ -20,7 +20,7 @@ One-line install:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Mirakelor/Anaru/main/install.sh | bash
-# Linux: installs the AppImage to ~/.local/bin/anaru + start-menu shortcut
+# Linux: extracts the AppImage to ~/.local/share/anaru, launcher at ~/.local/bin/anaru
 # macOS: installs Anaru.app into /Applications
 # Options: --deb (apt), --version <tag>
 ```
@@ -169,9 +169,8 @@ Studio / Xcode.
 
 Web deployment: serve the marketing site at the root and the app build under
 `/app/` (`node tools/deploy/build-vercel.mjs` produces exactly this layout).
-Deployment constants live in `src/lib/config.ts` — `APP_DOMAIN`,
-`CONTACT_EMAIL`, and `DEFAULT_PACK_URL` (the pack auto-imported after
-onboarding).
+Deployment constants live in `src/lib/config.ts` — `DEFAULT_PACK_URL` (the
+pack auto-imported when the library is empty).
 
 > **Note for hosts of `/app/`**: the tokenizer fetches its dictionary from
 > `/dict/*.dat.gz`. If your host auto-serves `.gz` files with

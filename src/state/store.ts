@@ -25,8 +25,6 @@ interface AppState {
   setFeedSeriesFilter: (seriesId: number | null) => void;
   dueCount: number;
   setDueCount: (count: number) => void;
-  importOpen: boolean;
-  setImportOpen: (open: boolean) => void;
 }
 
 export const useApp = create<AppState>((set) => ({
@@ -39,6 +37,4 @@ export const useApp = create<AppState>((set) => ({
   setFeedSeriesFilter: (feedSeriesFilter) => set({ feedSeriesFilter }),
   dueCount: 0,
   setDueCount: (dueCount) => set({ dueCount }),
-  importOpen: false,
-  setImportOpen: (importOpen) => set({ importOpen }),
 }));

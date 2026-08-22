@@ -2,9 +2,9 @@
 # Anaru installer — downloads the latest release from GitHub and installs it.
 #
 # Usage:
-#   ./install.sh                 # Linux: AppImage → ~/.local/bin/anaru
+#   ./install.sh                 # Linux: extracts AppImage to ~/.local/share/anaru, launcher at ~/.local/bin/anaru
 #   ./install.sh --deb           # Linux: install the .deb via apt
-#   ./install.sh --version v0.1.0
+#   ./install.sh --version v0.1.8
 #   ./install.sh                 # macOS: download the .dmg and open it
 set -euo pipefail
 
