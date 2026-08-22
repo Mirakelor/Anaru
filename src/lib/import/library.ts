@@ -170,13 +170,14 @@ export async function importRemoteEpisode(
   series: Series,
   input: RemoteEpisodeImport,
   onProgress?: (stage: string) => void,
+  knownDuration?: number,
 ): Promise<EpisodeResult> {
   onProgress?.('Reading subtitles…');
   const rawCues = parseSubtitles(input.subtitleName, input.subtitleText);
   if (rawCues.length === 0) {
     throw new Error('No usable subtitle lines were found in that file.');
   }
-  const duration = await probeDurationUrl(input.videoUrl);
+  const duration = knownDuration ?? (await probeDurationUrl(input.videoUrl));
   const episode: Episode = {
     seriesId: series.id!,
     index: input.index,
@@ -243,39 +244,74 @@ function resolveAgainst(base: string, href: string): string {
 }
 
 /** Ingest a content pack manifest: streams videos from the pack server. */
-export async function ingestPack(manifestUrl: string, onProgress?: (stage: string) => void): Promise<number> {
-  const response = await fetch(manifestUrl);
+export async function ingestPack(
+  manifestUrl: string,
+  onProgress?: (stage: string) => void,
+  signal?: AbortSignal,
+): Promise<number> {
+  const response = await fetch(manifestUrl, { signal });
   if (!response.ok) throw new Error(`Could not load the pack manifest (${response.status}).`);
   const manifest = (await response.json()) as PackManifest;
   if (!manifest || !Array.isArray(manifest.series)) throw new Error('That URL is not a valid content pack.');
-  let clips = 0;
+
+  // Phase 1: download every subtitle track first. Nothing is written to the
+  // database until the whole pack is fetched, so a failed load never leaves
+  // half-imported series behind.
+  type Fetched = {
+    series: PackSeries;
+    episode: PackEpisode;
+    subtitleText: string;
+    translationText: string | null;
+    duration: number;
+  };
+  const fetched: Fetched[] = [];
   for (const packSeries of manifest.series) {
-    const series = await createSeries({
-      title: packSeries.title,
-      slug: packSeries.slug,
-      source: 'pack',
-      posterPath: packSeries.poster ? resolveAgainst(manifestUrl, packSeries.poster) : null,
-    });
     for (const packEpisode of packSeries.episodes) {
       onProgress?.(`${packSeries.title} — episode ${packEpisode.index}…`);
-      const subtitleResponse = await fetch(resolveAgainst(manifestUrl, packEpisode.subtitle));
-      if (!subtitleResponse.ok) throw new Error(`Missing subtitles for ${packSeries.title} episode ${packEpisode.index}.`);
+      const subtitleResponse = await fetch(resolveAgainst(manifestUrl, packEpisode.subtitle), { signal });
+      if (!subtitleResponse.ok) {
+        throw new Error(`Missing subtitles for ${packSeries.title} episode ${packEpisode.index}.`);
+      }
       const subtitleText = await subtitleResponse.text();
       let translationText: string | null = null;
       if (packEpisode.translation) {
-        const translationResponse = await fetch(resolveAgainst(manifestUrl, packEpisode.translation));
+        const translationResponse = await fetch(resolveAgainst(manifestUrl, packEpisode.translation), { signal });
         if (translationResponse.ok) translationText = await translationResponse.text();
       }
-      const result = await importRemoteEpisode(series, {
+      const duration = await probeDurationUrl(resolveAgainst(manifestUrl, packEpisode.video));
+      fetched.push({ series: packSeries, episode: packEpisode, subtitleText, translationText, duration });
+    }
+  }
+
+  // Phase 2: everything is downloaded — now write to the database.
+  let clips = 0;
+  const created = new Map<string, Series>();
+  for (const { series: packSeries, episode: packEpisode, subtitleText, translationText, duration } of fetched) {
+    const key = packSeries.slug ?? packSeries.title;
+    let series = created.get(key);
+    if (!series) {
+      series = await createSeries({
+        title: packSeries.title,
+        slug: packSeries.slug,
+        source: 'pack',
+        posterPath: packSeries.poster ? resolveAgainst(manifestUrl, packSeries.poster) : null,
+      });
+      created.set(key, series);
+    }
+    const result = await importRemoteEpisode(
+      series,
+      {
         index: packEpisode.index,
         title: packEpisode.title ?? `Episode ${packEpisode.index}`,
         videoUrl: resolveAgainst(manifestUrl, packEpisode.video),
         subtitleName: packEpisode.subtitle.split('/').pop() ?? 'subtitles.srt',
         subtitleText,
         translationText,
-      });
-      clips += result.clipCount;
-    }
+      },
+      undefined,
+      duration,
+    );
+    clips += result.clipCount;
   }
   return clips;
 }

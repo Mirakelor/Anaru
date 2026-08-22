@@ -25,6 +25,10 @@ export function FeedPage() {
     return all.filter((c) => (filter ? c.seriesId === filter : !hidden.has(c.seriesId)));
   }, [filter]);
 
+  // Sound state lives at the feed level: the first entry starts muted (to
+  // satisfy autoplay policies), but switching clips must not reset it.
+  const [soundOn, setSoundOn] = useState(false);
+
   const ordered = useMemo(() => (clips ? shuffle(clips) : []), [clips]);
   const [current, setCurrent] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -63,7 +67,7 @@ export function FeedPage() {
   return (
     <div className="feed" ref={containerRef}>
       {ordered.map((clip, i) => (
-        <FeedClip key={clip.id} clip={clip} index={i} active={i === current} />
+        <FeedClip key={clip.id} clip={clip} index={i} active={i === current} soundOn={soundOn} onSoundChange={setSoundOn} />
       ))}
     </div>
   );
@@ -73,15 +77,16 @@ interface FeedClipProps {
   clip: Clip;
   index: number;
   active: boolean;
+  soundOn: boolean;
+  onSoundChange: (on: boolean) => void;
 }
 
-function FeedClip({ clip, index, active }: FeedClipProps) {
+function FeedClip({ clip, index, active, soundOn, onSoundChange }: FeedClipProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [src, setSrc] = useState<string | null>(null);
   const [cues, setCues] = useState<Cue[] | null>(null);
   const [time, setTime] = useState(clip.start);
   const [paused, setPaused] = useState(false);
-  const [soundOn, setSoundOn] = useState(false);
   const [ready, setReady] = useState(false);
 
   const episode = useLiveQuery(() => (active ? db.episodes.get(clip.episodeId) : undefined), [clip.episodeId, active]);
@@ -158,14 +163,25 @@ function FeedClip({ clip, index, active }: FeedClipProps) {
     if (video.paused) {
       video.play().catch(() => undefined);
       setPaused(false);
-      setSoundOn(true);
+      onSoundChange(true);
     } else {
       video.pause();
       setPaused(true);
     }
   };
 
-  const activeCue = cues?.find((cue) => time >= cue.start && time < cue.end) ?? null;
+  // Subtitle stays on screen for the whole clip: each clip is one line, so
+  // once a cue has started it keeps showing until the clip ends (tap-to-look-up
+  // needs the line to stay tappable).
+  const activeCue = useMemo(() => {
+    if (!cues) return null;
+    let last: Cue | null = null;
+    for (const cue of cues) {
+      if (time >= cue.start) last = cue;
+      else break;
+    }
+    return last;
+  }, [cues, time]);
   const mode = settings?.subtitleMode ?? 2;
   const showRomaji = mode === 0 || mode === 1;
   const showJapanese = mode !== 0 && mode !== 4;
@@ -183,9 +199,15 @@ function FeedClip({ clip, index, active }: FeedClipProps) {
             preload="metadata"
             onTimeUpdate={onTimeUpdate}
             onCanPlay={() => setReady(true)}
+            onLoadedData={() => setReady(true)}
           />
         )}
-        {active && !ready && <div className="feed-item-loading" />}
+        {active && !ready && (
+          <div className="feed-item-loading">
+            <span className="feed-loading-spinner" />
+            <span className="feed-loading-label">Loading…</span>
+          </div>
+        )}
         {paused && (
           <button type="button" className="feed-play-badge" aria-label="Play">
             <svg viewBox="0 0 24 24" width="34" height="34" fill="currentColor">
@@ -205,7 +227,7 @@ function FeedClip({ clip, index, active }: FeedClipProps) {
         className={`feed-sound ${soundOn ? 'on' : ''}`}
         onClick={(e) => {
           e.stopPropagation();
-          setSoundOn((s) => !s);
+          onSoundChange(!soundOn);
         }}
         aria-label={soundOn ? 'Mute' : 'Unmute'}
       >

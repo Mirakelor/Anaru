@@ -45,6 +45,7 @@ export function Onboarding() {
   const [liked, setLiked] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importStage, setImportStage] = useState('');
+  const [importError, setImportError] = useState('');
 
   useEffect(() => {
     const timer = setInterval(() => setSimIndex((i) => (i + 1) % SIM_LINES.length), 4400);
@@ -55,10 +56,15 @@ export function Onboarding() {
     await updateSettings({ subtitleMode: mode, onboarded: true });
     if (DEFAULT_PACK_URL) {
       setImporting(true);
+      setImportError('');
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 60_000);
       try {
-        await ingestPack(DEFAULT_PACK_URL, setImportStage);
+        await ingestPack(DEFAULT_PACK_URL, setImportStage, controller.signal);
       } catch {
-        /* content source unavailable — never block onboarding */
+        setImportError('The starter pack could not be loaded. Retry anytime from Library → Load pack.');
+      } finally {
+        clearTimeout(timer);
       }
       setImporting(false);
     }
@@ -162,6 +168,7 @@ export function Onboarding() {
             </button>
           </div>
           {importing && <p className="settings-progress">{importStage || 'Loading…'}</p>}
+          {importError && <p className="field-error">{importError}</p>}
           <p className="onboard-footnote">Add your own anime with Japanese subtitles from the Library tab.</p>
         </div>
       )}

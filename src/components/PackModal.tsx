@@ -12,14 +12,23 @@ export function PackModal({ onClose }: { onClose: () => void }) {
     setBusy(true);
     setError(null);
     setDoneClips(null);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 60_000);
     try {
-      const clips = await ingestPack(url.trim(), setStage);
+      const clips = await ingestPack(url.trim(), setStage, controller.signal);
       setDoneClips(clips);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Loading the pack failed.');
+      const message = err instanceof Error ? err.message : 'Loading the pack failed.';
+      const hint =
+        /Failed to fetch|NetworkError|abort|timeout/i.test(message)
+          ? 'The server did not respond. If it blocks cross-origin requests (CORS), the load cannot complete.'
+          : '';
+      setError(message + (hint ? ` ${hint}` : ''));
       setBusy(false);
       setStage('');
+    } finally {
+      clearTimeout(timer);
     }
   };
 
