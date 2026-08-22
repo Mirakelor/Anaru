@@ -108,6 +108,11 @@ function ReviewSession({ item, remaining, onGraded }: ReviewSessionProps) {
             <FuriganaText text={item.word.sentence} size="sheet" />
           </p>
           {listening && !revealed && <p className="review-reading-hidden">{item.word.reading}</p>}
+          {!revealed && (
+            <button type="button" className="btn btn-primary review-reveal" onClick={() => setRevealed(true)}>
+              Show answer
+            </button>
+          )}
         </div>
 
         {revealed ? (
@@ -132,11 +137,7 @@ function ReviewSession({ item, remaining, onGraded }: ReviewSessionProps) {
               ))}
             </div>
           </div>
-        ) : (
-          <button type="button" className="btn btn-primary review-reveal" onClick={() => setRevealed(true)}>
-            Show answer
-          </button>
-        )}
+        ) : null}
       </div>
     </div>
   );

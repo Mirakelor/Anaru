@@ -852,6 +852,8 @@ h2 {
 .review-scene {
   position: relative;
   aspect-ratio: 9 / 12;
+  max-height: 42vh;
+  margin-inline: auto;
   background: #000;
 }
 
@@ -998,7 +1000,8 @@ h2 {
 }
 
 .review-reveal {
-  margin: 18px;
+  margin: 18px 0 4px;
+  width: 100%;
 }
 
 .review-empty {
