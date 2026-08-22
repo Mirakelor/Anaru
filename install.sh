@@ -69,12 +69,36 @@ case "$OS" in
       URL="$(asset_url 'amd64.AppImage')"
       echo "→ Downloading AppImage…"
       curl -fL --retry 3 -o "$TMP/anaru.AppImage" "$URL"
-      mkdir -p "$HOME/.local/bin"
       chmod +x "$TMP/anaru.AppImage"
-      mv "$TMP/anaru.AppImage" "$HOME/.local/bin/anaru"
+      # Extract to disk instead of running from the archive: the AppImage serves
+      # its code pages over FUSE, and replacing the AppImage file while the app
+      # runs makes the next page-in fail with SIGBUS (WebProcess dies, UI freezes).
+      APPDIR="$HOME/.local/share/anaru"
+      echo "→ Extracting app to $APPDIR…"
+      (cd "$TMP" && "$TMP/anaru.AppImage" --appimage-extract >/dev/null)
+      mkdir -p "$HOME/.local/bin" "$HOME/.local/share"
+      rm -rf "$APPDIR"
+      mv "$TMP/squashfs-root" "$APPDIR"
+      cat > "$HOME/.local/bin/anaru" <<'EOF'
+#!/bin/sh
+APPDIR="$HOME/.local/share/anaru"
+export APPDIR
+export GDK_BACKEND=x11
+export LD_LIBRARY_PATH="$APPDIR/usr/lib:$APPDIR/usr/lib/x86_64-linux-gnu${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export XDG_DATA_DIRS="$APPDIR/usr/share:/usr/share${XDG_DATA_DIRS:+:$XDG_DATA_DIRS}"
+export GSETTINGS_SCHEMA_DIR="$APPDIR/usr/share/glib-2.0/schemas"
+export GIO_EXTRA_MODULES="$APPDIR/usr/lib/x86_64-linux-gnu/gio/modules"
+export GTK_PATH="$APPDIR/usr/lib/x86_64-linux-gnu/gtk-3.0"
+export GTK_IM_MODULE_FILE="$APPDIR/usr/lib/x86_64-linux-gnu/gtk-3.0/3.0.0/immodules.cache"
+export GDK_PIXBUF_MODULE_FILE="$APPDIR/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders.cache"
+export GST_PLUGIN_SYSTEM_PATH_1_0="$APPDIR/usr/lib/gstreamer-1.0"
+cd "$APPDIR/usr" || exit 1
+exec "$APPDIR/usr/bin/anaru" "$@"
+EOF
+      chmod +x "$HOME/.local/bin/anaru"
       install_linux_shortcut
-      echo "✔ Installed to $HOME/.local/bin/anaru"
-      echo "  (add it to PATH if needed: export PATH=\"\$HOME/.local/bin:\$PATH\")"
+      echo "✔ Installed to $APPDIR"
+      echo "  (add ~/.local/bin to PATH if needed: export PATH=\"\$HOME/.local/bin:\$PATH\")"
       echo "  Run: anaru"
     fi
     ;;

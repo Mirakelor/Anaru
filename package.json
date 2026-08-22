@@ -1,7 +1,7 @@
 {
   "name": "anaru",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.8",
   "type": "module",
   "description": "Learn Japanese by watching anime. Free, offline, on every platform.",
   "scripts": {

@@ -195,6 +195,16 @@ jobs:
         with:
           path: artifacts
           merge-multiple: true
+      - name: Rename bundles to the release version
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+          cd artifacts
+          for f in Anaru_0.1.0_*; do
+            [ -e "$f" ] || continue
+            mv "$f" "Anaru_${VERSION}_${f#Anaru_0.1.0_}"
+            echo "renamed: $f -> Anaru_${VERSION}_${f#Anaru_0.1.0_}"
+          done
       - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
