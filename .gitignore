@@ -14,5 +14,5 @@ src-tauri/gen/
 .DS_Store
 *.log
 site/learn/
-deploy/
+/deploy/
 .qoder/
