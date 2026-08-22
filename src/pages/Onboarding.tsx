@@ -81,10 +81,11 @@ export function Onboarding() {
             Real scenes. Furigana on every kanji. Tap a word to save it — review it like Anki.
           </p>
           <div className="onboard-device">
-            <div className="fs-scene">
+            <div className={`fs-scene fs-scene-${Math.floor(simIndex / 2) % 3}`}>
               <div className="fs-sky" />
               <div className="fs-stars" />
               <div className="fs-sun" />
+              <div className="fs-petals" />
               <div className="fs-hills" />
               <div className="fs-top">
                 <span>

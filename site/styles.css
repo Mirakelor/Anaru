@@ -84,6 +84,127 @@ section{padding:clamp(50px,7.5vw,96px) clamp(20px,5vw,42px)}
 .feed-sim .fs-progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,#ff5d73,#ffb454);animation:fsbar 4s linear forwards}
 @keyframes fsbar{to{width:100%}}
 
+.feed-sim .fs-sky {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #0b1030 0%, #2a1a4e 42%, #5a2a58 68%, #b4505a 100%);
+  animation: fssky 16s ease-in-out infinite alternate;
+}
+
+@keyframes fssky {
+  0% { filter: hue-rotate(0deg) brightness(1); }
+  50% { filter: hue-rotate(24deg) brightness(1.08); }
+  100% { filter: hue-rotate(-12deg) brightness(0.96); }
+}
+
+.feed-sim .fs-stars {
+  position: absolute;
+  inset: 0 0 34% 0;
+  background-image:
+    radial-gradient(1.6px 1.6px at 18% 22%, rgba(255,255,255,.9), transparent 60%),
+    radial-gradient(1.2px 1.2px at 34% 12%, rgba(255,255,255,.7), transparent 60%),
+    radial-gradient(1.8px 1.8px at 52% 30%, rgba(255,255,255,.85), transparent 60%),
+    radial-gradient(1.2px 1.2px at 68% 16%, rgba(255,255,255,.75), transparent 60%),
+    radial-gradient(1.5px 1.5px at 82% 26%, rgba(255,255,255,.9), transparent 60%),
+    radial-gradient(1px 1px at 10% 46%, rgba(255,255,255,.6), transparent 60%),
+    radial-gradient(1.3px 1.3px at 44% 48%, rgba(255,255,255,.7), transparent 60%),
+    radial-gradient(1.1px 1.1px at 60% 40%, rgba(255,255,255,.65), transparent 60%),
+    radial-gradient(1.4px 1.4px at 90% 44%, rgba(255,255,255,.8), transparent 60%),
+    radial-gradient(1.2px 1.2px at 28% 60%, rgba(255,255,255,.55), transparent 60%);
+  animation: fsstars 3.4s ease-in-out infinite alternate;
+}
+
+@keyframes fsstars {
+  from { opacity: 0.55; }
+  to { opacity: 1; }
+}
+
+.feed-sim .fs-sun {
+  position: absolute;
+  left: 50%;
+  top: 16%;
+  width: 46%;
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 42% 38%, #ffe9c9 0%, #ffb45c 34%, #ff6a5e 68%, rgba(255,106,94,0) 100%);
+  animation: fssun 5.2s ease-in-out infinite alternate;
+}
+
+@keyframes fssun {
+  from { transform: translateX(-50%) scale(0.92); filter: brightness(0.96); }
+  to { transform: translateX(-50%) scale(1.06); filter: brightness(1.1); }
+}
+
+.feed-sim .fs-hills {
+  position: absolute;
+  left: -12%;
+  right: -12%;
+  bottom: 0;
+  height: 30%;
+  background: linear-gradient(180deg, rgba(16,12,26,0) 0%, #120c1e 30%, #0a0712 100%);
+  clip-path: polygon(0 62%, 9% 46%, 18% 58%, 29% 34%, 41% 55%, 53% 40%, 64% 56%, 76% 38%, 88% 54%, 100% 44%, 100% 100%, 0 100%);
+  animation: fshills 14s ease-in-out infinite alternate;
+}
+
+@keyframes fshills {
+  from { transform: translateX(-2%); }
+  to { transform: translateX(2%); }
+}
+
+.feed-sim.fs-scene-1 .fs-sky {
+  background: linear-gradient(180deg, #4a1c1a 0%, #8a3a22 40%, #d97a3a 68%, #f2b05a 100%);
+}
+
+.feed-sim.fs-scene-1 .fs-sun {
+  top: 46%;
+  width: 30%;
+  background: radial-gradient(circle at 42% 38%, #fff3d6 0%, #ffd28a 34%, #ff9a5c 68%, rgba(255,154,92,0) 100%);
+}
+
+.feed-sim.fs-scene-1 .fs-stars {
+  display: none;
+}
+
+.feed-sim.fs-scene-2 .fs-sky {
+  background: linear-gradient(180deg, #1a2c46 0%, #4a5f7a 38%, #d9a8b8 66%, #f7d9c4 100%);
+}
+
+.feed-sim.fs-scene-2 .fs-sun {
+  top: 40%;
+  width: 38%;
+  background: radial-gradient(circle at 42% 38%, #fff6e8 0%, #ffd9c0 40%, #f7a8c0 72%, rgba(247,168,192,0) 100%);
+}
+
+.feed-sim.fs-scene-2 .fs-hills {
+  background: linear-gradient(180deg, rgba(90,60,80,0) 0%, #5a3c50 30%, #2e1c2c 100%);
+}
+
+.feed-sim .fs-petals {
+  position: absolute;
+  inset: 0 0 30% 0;
+  pointer-events: none;
+  opacity: 0;
+  background-image:
+    radial-gradient(5px 5px at 15% 12%, rgba(255,190,205,.9), transparent 60%),
+    radial-gradient(4px 4px at 38% 28%, rgba(255,170,195,.8), transparent 60%),
+    radial-gradient(5px 5px at 62% 16%, rgba(255,200,210,.85), transparent 60%),
+    radial-gradient(4px 4px at 82% 34%, rgba(255,180,200,.8), transparent 60%),
+    radial-gradient(5px 5px at 26% 48%, rgba(255,190,205,.7), transparent 60%),
+    radial-gradient(4px 4px at 70% 52%, rgba(255,175,195,.7), transparent 60%);
+  animation: fspetals 6s linear infinite;
+}
+
+@keyframes fspetals {
+  from { transform: translateY(-8%); opacity: 0.55; }
+  50% { opacity: 1; }
+  to { transform: translateY(14%); opacity: 0.55; }
+}
+
+.feed-sim.fs-scene-2 .fs-petals {
+  opacity: 1;
+}
+
 /* ---------- library ---------- */
 .library{max-width:var(--maxw);margin:0 auto;text-align:center}
 .lib-head h2{max-width:18ch;margin:0 auto}

@@ -159,6 +159,21 @@ with:
 npm run icons:build
 ```
 
+## 💾 Data storage
+
+Everything is stored **on your device, locally** — nothing is uploaded:
+
+| What | Where |
+|---|---|
+| Settings, library, subtitles, saved words, review history | IndexedDB (database `anaru`) |
+| Imported video files | OPFS private storage (`anaru-media/`) |
+| Cached dictionary + tokenizer | Service worker cache (offline) |
+
+- No account, no sync, no telemetry. Each device keeps its own data.
+- **Web/PWA, desktop (Tauri) and mobile (Capacitor) are the same app** — any
+  of them works standalone; data just does not roam between devices yet.
+- Wipe everything: Settings → Erase all data (clears IndexedDB + media).
+
 ## ⚖️ Legal posture
 
 Anaru is an educational tool. It plays **short excerpts** of media you provide

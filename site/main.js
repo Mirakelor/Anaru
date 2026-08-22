@@ -47,6 +47,7 @@ const cycle = () => {
   elEn.textContent = line.en;
   elTitle.textContent = EPISODES[Math.floor(i / 2) % EPISODES.length].title + ' · ' + EPISODES[Math.floor(i / 2) % EPISODES.length].ep;
   const screen = document.getElementById('feedSim');
+  screen.className = 'feed-sim fs-scene-' + (Math.floor(i / 2) % 3);
   const bar = screen.querySelector('.fs-progress span');
   bar.style.animation = 'none';
   void bar.offsetWidth;
