@@ -77,9 +77,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macos-bundles
-          path: |
-            src-tauri/target/release/bundle/dmg/*.dmg
-            src-tauri/target/release/bundle/macos/*.app
+          path: src-tauri/target/release/bundle/dmg/*.dmg
 
   android:
     name: Android (signed release AAB/APK, or debug APK)
