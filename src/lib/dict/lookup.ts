@@ -26,7 +26,7 @@ interface DictFile {
 
 let dictPromise: Promise<DictFile> | null = null;
 
-export function loadDictionary(url = '/dict-data.json'): Promise<DictFile> {
+export function loadDictionary(url = `${import.meta.env.BASE_URL}dict-data.json`): Promise<DictFile> {
   if (!dictPromise) {
     dictPromise = fetch(url)
       .then((r) => {

@@ -9,8 +9,9 @@ const dictNoEncoding: Plugin = {
   configureServer(server) {
     server.middlewares.use((req, res, next) => {
       const url = (req.url ?? '').split('?')[0];
-      if (!url.startsWith('/dict/')) return next();
-      const filePath = path.join(server.config.publicDir, url);
+      const fileUrl = url.startsWith('/app/') ? url.slice(4) : url;
+      if (!fileUrl.startsWith('/dict/')) return next();
+      const filePath = path.join(server.config.publicDir, fileUrl);
       readFile(filePath, (err, data) => {
         if (err) return next();
         res.setHeader('Content-Type', 'application/octet-stream');
@@ -23,8 +24,9 @@ const dictNoEncoding: Plugin = {
   configurePreviewServer(server) {
     server.middlewares.use((req, res, next) => {
       const url = (req.url ?? '').split('?')[0];
-      if (!url.startsWith('/dict/')) return next();
-      const filePath = path.join(server.config.root, 'dist', url);
+      const fileUrl = url.startsWith('/app/') ? url.slice(4) : url;
+      if (!fileUrl.startsWith('/dict/')) return next();
+      const filePath = path.join(server.config.root, 'dist', fileUrl);
       readFile(filePath, (err, data) => {
         if (err) return next();
         res.setHeader('Content-Type', 'application/octet-stream');
@@ -37,6 +39,7 @@ const dictNoEncoding: Plugin = {
 };
 
 export default defineConfig({
+  base: '/app/',
   plugins: [
     dictNoEncoding,
     react(),
@@ -52,7 +55,7 @@ export default defineConfig({
         background_color: '#000000',
         display: 'standalone',
         orientation: 'portrait-primary',
-        start_url: '/',
+        start_url: '/app/',
         icons: [
           { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },

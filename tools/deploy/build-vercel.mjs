@@ -22,6 +22,10 @@ mkdirSync(outDir, { recursive: true });
 // marketing site at the root (skip generated icons source and nothing else lives there)
 cpSync(siteDir, outDir, { recursive: true, filter: (src) => !src.endsWith('icon.png') });
 
+// site favicon/icons at the root (site pages reference /icons/…)
+mkdirSync(path.join(outDir, 'icons'), { recursive: true });
+cpSync(path.join(root, 'public', 'icons'), path.join(outDir, 'icons'), { recursive: true });
+
 // app under /app/
 mkdirSync(path.join(outDir, 'app'), { recursive: true });
 cpSync(distDir, path.join(outDir, 'app'), { recursive: true });

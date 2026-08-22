@@ -26,7 +26,7 @@ async function loadKuromoji(): Promise<{ builder: typeof kuromoji.builder }> {
 let tokenizerPromise: Promise<kuromoji.Tokenizer<kuromoji.IpadicFeatures>> | null = null;
 
 export function initTokenizer(
-  dicPath = '/dict',
+  dicPath = `${import.meta.env.BASE_URL}dict`,
 ): Promise<kuromoji.Tokenizer<kuromoji.IpadicFeatures>> {
   if (!tokenizerPromise) {
     tokenizerPromise = loadKuromoji().then(

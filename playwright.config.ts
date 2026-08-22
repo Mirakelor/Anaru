@@ -5,7 +5,7 @@ export default defineConfig({
   timeout: 90_000,
   retries: 1,
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://localhost:5173/app',
     viewport: { width: 420, height: 860 },
     permissions: [],
   },
