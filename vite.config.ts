@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { readFile } from 'node:fs';
 import path from 'node:path';
+import pkg from './package.json' with { type: 'json' };
 
 const dictNoEncoding: Plugin = {
   name: 'dict-no-encoding',
@@ -42,6 +43,9 @@ export default defineConfig({
   // base is set per build target: web/Vercel uses `/app/` (npm run build),
   // Capacitor/Tauri use relative `./` (npm run build:app) so assets resolve
   // under the local WebView's root path.
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   plugins: [
     dictNoEncoding,
     react(),

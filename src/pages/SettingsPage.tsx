@@ -8,6 +8,13 @@ import { DEFAULT_PACK_URL } from '../lib/config';
 export function SettingsPage() {
   const settings = useSettings();
   const [confirmClear, setConfirmClear] = useState(false);
+  const [errors] = useState<{ t: number; msg: string; at?: string }[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('anaru-errors') ?? '[]');
+    } catch {
+      return [];
+    }
+  });
 
   if (!settings) return <div className="page-loading" />;
 
@@ -148,7 +155,19 @@ export function SettingsPage() {
           Anaru is free, offline and open data. Words come from the anime you watch; nothing is generated. Dictionary
           data © JMdict (CC BY-SA), tokenization by Kuromoji (IPA dictionary), scheduling by FSRS.
         </p>
-        <p className="muted">Version 0.1.0</p>
+        <p className="muted">Version {__APP_VERSION__}</p>
+        {errors.length > 0 && (
+          <details className="settings-errors">
+            <summary>Diagnostics ({errors.length} errors)</summary>
+            <ul>
+              {errors.map((err, i) => (
+                <li key={i}>
+                  {new Date(err.t).toLocaleString()} — {err.msg} {err.at ? `@ ${err.at}` : ''}
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
       </section>
     </div>
   );

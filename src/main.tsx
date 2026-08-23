@@ -16,6 +16,27 @@ if (isPlainWeb) {
   registerSW({ immediate: true });
 }
 
+// Diagnostic: keep the last few uncaught errors in localStorage so a crash
+// (e.g. the Android black screen after import) can be reported from Settings.
+try {
+  const capture = (entry: unknown) => {
+    try {
+      const log = JSON.parse(localStorage.getItem('anaru-errors') ?? '[]');
+      log.push(entry);
+      localStorage.setItem('anaru-errors', JSON.stringify(log.slice(-10)));
+    } catch {
+      /* storage unavailable */
+    }
+  };
+  window.addEventListener('error', (e) => capture({ t: Date.now(), msg: e.message, at: `${e.filename}:${e.lineno}` }));
+  window.addEventListener('unhandledrejection', (e) => {
+    const reason = e.reason instanceof Error ? `${e.reason.message} @ ${e.reason.stack?.split('\n')[1]?.trim() ?? ''}` : String(e.reason);
+    capture({ t: Date.now(), msg: reason });
+  });
+} catch {
+  /* diagnostics must never break startup */
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
