@@ -79,6 +79,13 @@ case "$OS" in
       mkdir -p "$HOME/.local/bin" "$HOME/.local/share"
       rm -rf "$APPDIR"
       mv "$TMP/squashfs-root" "$APPDIR"
+      # The AppImage bundles GStreamer core libs from the build image, but no
+      # plugins. Mixing that core with the host's plugins hangs the WebProcess
+      # media pipeline (video probe freezes the UI during import), so hide the
+      # bundled copies and let the linker use the host GStreamer.
+      for f in "$APPDIR"/usr/lib/libgst*.so.0; do
+        [ -e "$f" ] && mv "$f" "$f.bundled"
+      done
       cat > "$HOME/.local/bin/anaru" <<'EOF'
 #!/bin/sh
 APPDIR="$HOME/.local/share/anaru"
