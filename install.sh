@@ -79,13 +79,6 @@ case "$OS" in
       mkdir -p "$HOME/.local/bin" "$HOME/.local/share"
       rm -rf "$APPDIR"
       mv "$TMP/squashfs-root" "$APPDIR"
-      # The AppImage bundles GStreamer core libs from the build image, but no
-      # plugins. Mixing that core with the host's plugins hangs the WebProcess
-      # media pipeline (video probe freezes the UI during import), so hide the
-      # bundled copies and let the linker use the host GStreamer.
-      for f in "$APPDIR"/usr/lib/libgst*.so.0; do
-        [ -e "$f" ] && mv "$f" "$f.bundled"
-      done
       cat > "$HOME/.local/bin/anaru" <<'EOF'
 #!/bin/sh
 APPDIR="$HOME/.local/share/anaru"
@@ -98,6 +91,7 @@ export GIO_EXTRA_MODULES="$APPDIR/usr/lib/x86_64-linux-gnu/gio/modules"
 export GTK_PATH="$APPDIR/usr/lib/x86_64-linux-gnu/gtk-3.0"
 export GTK_IM_MODULE_FILE="$APPDIR/usr/lib/x86_64-linux-gnu/gtk-3.0/3.0.0/immodules.cache"
 export GDK_PIXBUF_MODULE_FILE="$APPDIR/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders.cache"
+export GST_PLUGIN_SYSTEM_PATH_1_0="$APPDIR/usr/lib/gstreamer-1.0"
 cd "$APPDIR/usr" || exit 1
 exec "$APPDIR/usr/bin/anaru" "$@"
 EOF
