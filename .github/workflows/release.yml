@@ -205,7 +205,10 @@ jobs:
           for f in Anaru_*.AppImage Anaru_*.deb Anaru_*.rpm Anaru_*.msi Anaru_*.exe Anaru_*.dmg; do
             [ -e "$f" ] || continue
             new="$(printf '%s' "$f" | sed "s/^Anaru_[^_]*_/Anaru_${VERSION}_/")"
-            [ "$f" != "$new" ] && mv "$f" "$new" && echo "renamed: $f -> $new"
+            if [ "$f" != "$new" ]; then
+              mv "$f" "$new"
+              echo "renamed: $f -> $new"
+            fi
           done
       - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2
