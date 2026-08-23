@@ -1,4 +1,5 @@
 let voices: SpeechSynthesisVoice[] | null = null;
+let voicesPromise: Promise<void> | null = null;
 
 export function ttsAvailable(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window;
@@ -7,14 +8,34 @@ export function ttsAvailable(): boolean {
 function refreshVoices() {
   if (!ttsAvailable()) return;
   voices = window.speechSynthesis.getVoices();
-  if (voices.length === 0) {
-    window.speechSynthesis.addEventListener('voiceschanged', refreshVoices, { once: true });
+}
+
+// Android WebView loads voices asynchronously: the first getVoices() call is
+// empty and the list only arrives after the voiceschanged event. Wait for it
+// (with a timeout) so the Japanese voice is actually available.
+function ensureVoices(timeoutMs = 4000): Promise<void> {
+  if (!voicesPromise) {
+    voicesPromise = new Promise((resolve) => {
+      if (!ttsAvailable()) return resolve();
+      refreshVoices();
+      if (voices && voices.length > 0) return resolve();
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        refreshVoices();
+        resolve();
+      };
+      window.speechSynthesis.addEventListener('voiceschanged', finish, { once: true });
+      setTimeout(finish, timeoutMs);
+    });
   }
+  return voicesPromise;
 }
 
 export function japaneseVoice(): SpeechSynthesisVoice | null {
   if (!ttsAvailable()) return null;
-  if (voices === null) refreshVoices();
+  refreshVoices();
   return voices?.find((v) => v.lang.toLowerCase().startsWith('ja')) ?? null;
 }
 
@@ -34,6 +55,7 @@ async function speakViaTauri(text: string): Promise<boolean> {
 
 export async function speakJapanese(text: string): Promise<boolean> {
   if (ttsAvailable()) {
+    await ensureVoices();
     const voice = japaneseVoice();
     if (voice) {
       window.speechSynthesis.cancel();
