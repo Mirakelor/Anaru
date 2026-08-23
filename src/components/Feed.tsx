@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, mediaUrl } from '../lib/db';
 import type { Clip, Cue, Episode, Series } from '../lib/types';
+import type { FuriganaSegment } from '../lib/nlp/tokenize';
 import { cuesForClip } from '../lib/import/library';
 import { useApp } from '../state/store';
 import { FuriganaText } from './FuriganaText';
@@ -288,23 +289,9 @@ interface SubtitleBlockProps {
 function SubtitleBlock({ cue, clip, episode, series, showRomaji, showJapanese, showEnglish }: SubtitleBlockProps) {
   const line = useTokenized(cue.text);
   const openWordSheet = useApp((s) => s.openWordSheet);
+  const wordElsRef = useRef<(HTMLElement | null)[]>([]);
 
-  const lookUp = () => {
-    const segment =
-      line?.segments.find((s) => s.isWord) ??
-      (() => {
-        const m = cue.text.match(/[\p{Script=Han}]+|[ぁ-んァ-ン]+/u);
-        return m
-          ? {
-              text: m[0],
-              parts: [{ text: m[0], ruby: null }],
-              tokenIndex: 0,
-              baseForm: m[0],
-              reading: '',
-              isWord: true,
-            }
-          : null;
-      })();
+  const openFor = (segment: FuriganaSegment | null) => {
     if (!segment) return;
     openWordSheet({
       surface: segment.text,
@@ -319,14 +306,59 @@ function SubtitleBlock({ cue, clip, episode, series, showRomaji, showJapanese, s
     });
   };
 
+  const lookUpAt = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!line) {
+      const m = cue.text.match(/[\p{Script=Han}]+|[ぁ-んァ-ン]+/u);
+      openFor(
+        m
+          ? {
+              text: m[0],
+              parts: [{ text: m[0], ruby: null }],
+              tokenIndex: 0,
+              baseForm: m[0],
+              reading: '',
+              isWord: true,
+            }
+          : null,
+      );
+      return;
+    }
+    const words = line.segments.filter((s) => s.isWord);
+    let best = -1;
+    let bestDist = Infinity;
+    wordElsRef.current.forEach((el, i) => {
+      if (!el || !words[i]) return;
+      const r = el.getBoundingClientRect();
+      const dx = r.left + r.width / 2 - e.clientX;
+      const dy = r.top + r.height / 2 - e.clientY;
+      const d = dx * dx + dy * dy;
+      if (d < bestDist) {
+        bestDist = d;
+        best = i;
+      }
+    });
+    openFor(best >= 0 ? words[best] : null);
+  };
+
   return (
-    <div className="subtitle-block" onClick={(e) => { e.stopPropagation(); lookUp(); }}>
+    <div className="subtitle-block" onClick={lookUpAt}>
       {showRomaji && (
         <p className="subtitle-romaji">{line ? line.romaji : ''}</p>
       )}
       {showJapanese && (
         <p className="subtitle-jp">
-          <FuriganaText text={cue.text} clip={clip} episode={episode} series={series} cue={cue} translation={cue.translation} />
+          <FuriganaText
+            text={cue.text}
+            clip={clip}
+            episode={episode}
+            series={series}
+            cue={cue}
+            translation={cue.translation}
+            wordRefs={(els) => {
+              wordElsRef.current = els;
+            }}
+          />
         </p>
       )}
       {showEnglish && cue.translation && <p className="subtitle-en">{cue.translation}</p>}

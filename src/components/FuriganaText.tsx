@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useTokenized } from '../lib/nlp/useTokenized';
 import type { FuriganaSegment } from '../lib/nlp/tokenize';
 import type { Clip, Cue, Episode, Series } from '../lib/types';
@@ -11,9 +12,10 @@ interface FuriganaTextProps {
   series?: Series | null;
   cue?: Cue | null;
   translation?: string;
+  wordRefs?: (els: (HTMLElement | null)[]) => void;
 }
 
-export function FuriganaText({ text, size = 'overlay', clip, episode, series, cue, translation }: FuriganaTextProps) {
+export function FuriganaText({ text, size = 'overlay', clip, episode, series, cue, translation, wordRefs }: FuriganaTextProps) {
   const line = useTokenized(text);
   const openWordSheet = useApp((s) => s.openWordSheet);
 
@@ -63,6 +65,11 @@ export function FuriganaText({ text, size = 'overlay', clip, episode, series, cu
     );
   }
 
+  const wordEls: (HTMLButtonElement | null)[] = [];
+  useEffect(() => {
+    wordRefs?.(wordEls);
+  });
+
   return (
     <span className={`furi-line furi-${size}`}>
       {line.segments.map((segment, i) =>
@@ -70,6 +77,9 @@ export function FuriganaText({ text, size = 'overlay', clip, episode, series, cu
           <button
             type="button"
             key={i}
+            ref={(el) => {
+              wordEls[wordEls.length] = el;
+            }}
             className="furi-word"
             onClick={(e) => {
               e.stopPropagation();

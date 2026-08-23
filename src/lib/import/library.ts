@@ -150,6 +150,10 @@ export async function cuesForClip(clip: Clip): Promise<Cue[]> {
 }
 
 export async function probeDurationUrl(url: string): Promise<number> {
+  // Android WebView can black-screen when many <video> probes are created in
+  // a row during pack import. Durations only refine clip ends (the subtitle
+  // segments already bound them), so skip probing there.
+  if (typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent)) return 0;
   return new Promise<number>((resolve) => {
     const video = document.createElement('video');
     video.preload = 'metadata';
