@@ -98,6 +98,10 @@ async function speakViaEdgeTts(text: string): Promise<boolean> {
     let ticks = Math.floor(Date.now() / 1000) + WIN_EPOCH;
     ticks -= ticks % 300; // rounded down to 5 minutes, as the service expects
     ticks *= 10000000;
+    if (typeof crypto === 'undefined' || !crypto.subtle) {
+      logDiag('edge-tts: crypto.subtle unavailable');
+      return false;
+    }
     const gec = (await sha256Hex(`${ticks.toFixed(0)}${EDGE_TOKEN}`)).toUpperCase();
     const connId = crypto.randomUUID();
     const ws = new WebSocket(
@@ -112,17 +116,22 @@ async function speakViaEdgeTts(text: string): Promise<boolean> {
         resolve(false);
       }, 20000);
       ws.onopen = () => {
-        ws.send(
-          `X-Timestamp:${edgeDateString()}\r\nContent-Type:application/json; charset=utf-8\r\nPath:speech.config\r\n\r\n` +
-            '{"context":{"synthesis":{"audio":{"metadataoptions":{"sentenceBoundaryEnabled":"false","wordBoundaryEnabled":"true"},' +
-            '"outputFormat":"audio-24khz-48kbitrate-mono-mp3"}}}}\r\n',
-        );
-        const ssml = `<speak version='1.0' xml:lang='ja-JP'><voice name='ja-JP-KeitaNeural'>${escapeXml(
-          text.slice(0, 100),
-        )}</voice></speak>`;
-        ws.send(
-          `X-RequestId:${connId}\r\nContent-Type:application/ssml+xml\r\nX-Timestamp:${edgeDateString()}Z\r\nPath:ssml\r\n\r\n${ssml}`,
-        );
+        try {
+          ws.send(
+            `X-Timestamp:${edgeDateString()}\r\nContent-Type:application/json; charset=utf-8\r\nPath:speech.config\r\n\r\n` +
+              '{"context":{"synthesis":{"audio":{"metadataoptions":{"sentenceBoundaryEnabled":"false","wordBoundaryEnabled":"true"},' +
+              '"outputFormat":"audio-24khz-48kbitrate-mono-mp3"}}}}\r\n',
+          );
+          const ssml = `<speak version='1.0' xml:lang='ja-JP'><voice name='ja-JP-KeitaNeural'>${escapeXml(
+            text.slice(0, 100),
+          )}</voice></speak>`;
+          ws.send(
+            `X-RequestId:${connId}\r\nContent-Type:application/ssml+xml\r\nX-Timestamp:${edgeDateString()}Z\r\nPath:ssml\r\n\r\n${ssml}`,
+          );
+        } catch (err) {
+          logDiag(`edge-tts send failed: ${err instanceof Error ? err.message : String(err)}`);
+          resolve(false);
+        }
       };
       ws.onmessage = (ev) => {
         if (typeof ev.data !== 'string') {
@@ -145,7 +154,8 @@ async function speakViaEdgeTts(text: string): Promise<boolean> {
         if (chunks.length > 0) {
           const url = URL.createObjectURL(new Blob(chunks, { type: 'audio/mpeg' }));
           const audio = new Audio(url);
-          audio.play().catch(() => undefined);
+          audio.play().catch((err) => logDiag(`edge-tts audio play rejected: ${err instanceof Error ? err.name : String(err)}`));
+          logDiag(`edge-tts ok, audio chunks=${chunks.length} (close ${e.code})`);
           resolve(true);
         } else {
           logDiag(`edge-tts closed (code ${e.code}) without audio`);
@@ -153,7 +163,8 @@ async function speakViaEdgeTts(text: string): Promise<boolean> {
         }
       };
     });
-  } catch {
+  } catch (err) {
+    logDiag(`edge-tts exception: ${err instanceof Error ? err.message : String(err)}`);
     return false;
   }
 }
@@ -174,6 +185,7 @@ export async function speakJapanese(text: string): Promise<boolean> {
       window.speechSynthesis.speak(utterance);
       return true;
     }
+    logDiag(`tts: no japanese voice (${voices?.length ?? 0} voices)`);
   }
   if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
     return speakViaTauri(text);
