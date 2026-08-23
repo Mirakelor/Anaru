@@ -17,9 +17,12 @@ if (isPlainWeb) {
 }
 
 // Diagnostic: keep the last few uncaught errors in localStorage so a crash
-// (e.g. the Android black screen after import) can be reported from Settings.
+// can be reported from Settings. Only active when Settings -> Diagnostics is
+// enabled.
 try {
+  const diagOn = localStorage.getItem('anaru-diagnostics') === '1';
   const capture = (entry: unknown) => {
+    if (!diagOn) return;
     try {
       const log = JSON.parse(localStorage.getItem('anaru-errors') ?? '[]');
       log.push(entry);

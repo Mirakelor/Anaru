@@ -167,10 +167,12 @@ Desktop (Tauri 2): `cd src-tauri && npx tauri build` (Linux prerequisites:
 Mobile (Capacitor): `npx cap sync android|ios` then build with Android
 Studio / Xcode.
 
-> Word pronunciation on the Linux desktop uses the `edge-tts` CLI when it is
-> installed (`uv tool install edge-tts` or `pip install edge-tts`), falling
-> back to `espeak-ng` (offline). WebKitGTK has no speechSynthesis API, so
-> without one of these engines the speak button is hidden.
+> Word pronunciation: browsers and Windows/macOS use the system speech
+> synthesis. The Linux desktop has no speechSynthesis (WebKitGTK), so it uses
+> the `edge-tts` CLI when installed (`uv tool install edge-tts` or
+> `pip install edge-tts`), with `espeak-ng` as an offline fallback. Android
+> uses Microsoft Edge TTS directly over WebSocket when the device has no
+> Japanese TTS voice.
 
 Web deployment: serve the marketing site at the root and the app build under
 `/app/` (`node tools/deploy/build-vercel.mjs` produces exactly this layout).

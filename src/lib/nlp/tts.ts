@@ -82,6 +82,7 @@ function escapeXml(text: string): string {
 
 function logDiag(msg: string) {
   try {
+    if (localStorage.getItem('anaru-diagnostics') !== '1') return;
     const log = JSON.parse(localStorage.getItem('anaru-errors') ?? '[]');
     log.push({ t: Date.now(), msg: `tts: ${msg}` });
     localStorage.setItem('anaru-errors', JSON.stringify(log.slice(-10)));

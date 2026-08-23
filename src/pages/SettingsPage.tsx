@@ -8,7 +8,7 @@ import { DEFAULT_PACK_URL } from '../lib/config';
 export function SettingsPage() {
   const settings = useSettings();
   const [confirmClear, setConfirmClear] = useState(false);
-  const [errors] = useState<{ t: number; msg: string; at?: string }[]>(() => {
+  const [errors, setErrors] = useState<{ t: number; msg: string; at?: string }[]>(() => {
     try {
       return JSON.parse(localStorage.getItem('anaru-errors') ?? '[]');
     } catch {
@@ -122,6 +122,45 @@ export function SettingsPage() {
       </section>
 
       <section className="settings-section">
+        <h2>Diagnostics</h2>
+        <label className="setting-row">
+          <span>Record diagnostic log</span>
+          <input
+            type="checkbox"
+            checked={settings.diagnostics}
+            onChange={async (e) => {
+              const on = e.target.checked;
+              await updateSettings({ diagnostics: on });
+              try {
+                if (on) {
+                  localStorage.setItem('anaru-diagnostics', '1');
+                } else {
+                  localStorage.removeItem('anaru-diagnostics');
+                  localStorage.removeItem('anaru-errors');
+                }
+              } catch {
+                /* storage unavailable */
+              }
+              setErrors(on ? [] : []);
+            }}
+          />
+        </label>
+        <p className="settings-hint">
+          Records TTS and error details locally so issues can be reported. Off by default; turning it off clears the
+          log.
+        </p>
+        {errors.length > 0 && (
+          <ul className="settings-errors">
+            {errors.map((err, i) => (
+              <li key={i}>
+                {new Date(err.t).toLocaleString()} — {err.msg} {err.at ? `@ ${err.at}` : ''}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="settings-section">
         <h2>Data</h2>
         {confirmClear ? (
           <div className="setting-row">
@@ -156,18 +195,6 @@ export function SettingsPage() {
           dictionary), scheduling by FSRS.
         </p>
         <p className="muted">Version {__APP_VERSION__}</p>
-        {errors.length > 0 && (
-          <details className="settings-errors">
-            <summary>Diagnostics ({errors.length} errors)</summary>
-            <ul>
-              {errors.map((err, i) => (
-                <li key={i}>
-                  {new Date(err.t).toLocaleString()} — {err.msg} {err.at ? `@ ${err.at}` : ''}
-                </li>
-              ))}
-            </ul>
-          </details>
-        )}
       </section>
     </div>
   );
