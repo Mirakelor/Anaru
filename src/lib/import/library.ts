@@ -152,8 +152,12 @@ export async function cuesForClip(clip: Clip): Promise<Cue[]> {
 export async function probeDurationUrl(url: string): Promise<number> {
   // Android WebView can black-screen when many <video> probes are created in
   // a row during pack import. Durations only refine clip ends (the subtitle
-  // segments already bound them), so skip probing there.
-  if (typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent)) return 0;
+  // segments already bound them), so skip probing there. (Detected via the
+  // Capacitor API — the Android WebView's UA is overridden for Edge TTS.)
+  const isCapacitorAndroid =
+    typeof window !== 'undefined' &&
+    (window as unknown as { Capacitor?: { getPlatform?: () => string } }).Capacitor?.getPlatform?.() === 'android';
+  if (isCapacitorAndroid) return 0;
   return new Promise<number>((resolve) => {
     const video = document.createElement('video');
     video.preload = 'metadata';
