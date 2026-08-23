@@ -91,7 +91,6 @@ export GIO_EXTRA_MODULES="$APPDIR/usr/lib/x86_64-linux-gnu/gio/modules"
 export GTK_PATH="$APPDIR/usr/lib/x86_64-linux-gnu/gtk-3.0"
 export GTK_IM_MODULE_FILE="$APPDIR/usr/lib/x86_64-linux-gnu/gtk-3.0/3.0.0/immodules.cache"
 export GDK_PIXBUF_MODULE_FILE="$APPDIR/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders.cache"
-export GST_PLUGIN_SYSTEM_PATH_1_0="$APPDIR/usr/lib/gstreamer-1.0"
 cd "$APPDIR/usr" || exit 1
 exec "$APPDIR/usr/bin/anaru" "$@"
 EOF
