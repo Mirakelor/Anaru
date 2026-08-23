@@ -202,10 +202,10 @@ jobs:
           VERSION="${{ github.ref_name }}"
           VERSION="${VERSION#v}"
           cd artifacts
-          for f in Anaru_0.1.0_*; do
+          for f in Anaru_*.AppImage Anaru_*.deb Anaru_*.rpm Anaru_*.msi Anaru_*.exe Anaru_*.dmg; do
             [ -e "$f" ] || continue
-            mv "$f" "Anaru_${VERSION}_${f#Anaru_0.1.0_}"
-            echo "renamed: $f -> Anaru_${VERSION}_${f#Anaru_0.1.0_}"
+            new="$(printf '%s' "$f" | sed "s/^Anaru_[^_]*_/Anaru_${VERSION}_/")"
+            [ "$f" != "$new" ] && mv "$f" "$new" && echo "renamed: $f -> $new"
           done
       - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2

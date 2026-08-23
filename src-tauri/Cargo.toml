@@ -1,6 +1,6 @@
 [package]
 name = "anaru"
-version = "0.1.8"
+version = "0.1.10"
 description = "Learn Japanese by watching anime"
 authors = ["Anaru"]
 edition = "2021"

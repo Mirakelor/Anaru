@@ -27,6 +27,9 @@ function playOnlineTts(text: string): boolean {
       'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ja&q=' +
       encodeURIComponent(text.slice(0, 80));
     const audio = new Audio(url);
+    // Google's translate_tts rejects requests whose Referer is not a web
+    // origin (tauri://localhost gets a 400), so strip the referer.
+    (audio as HTMLMediaElement & { referrerPolicy?: string }).referrerPolicy = 'no-referrer';
     audio.play().catch(() => undefined);
     return true;
   } catch {
