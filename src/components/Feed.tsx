@@ -93,6 +93,11 @@ function FeedClip({ clip, index, active, soundOn, onSoundChange }: FeedClipProps
   const [time, setTime] = useState(clip.start);
   const [paused, setPaused] = useState(false);
   const [ready, setReady] = useState(false);
+  // On Android the playing video renders on a native surface that covers all
+  // DOM below it (tab bar included) — keep the video box above the tab bar.
+  const androidVideoSpace =
+    typeof window !== 'undefined' &&
+    (window as unknown as { Capacitor?: { getPlatform?: () => string } }).Capacitor?.getPlatform?.() === 'android';
 
   const episode = useLiveQuery(() => (active ? db.episodes.get(clip.episodeId) : undefined), [clip.episodeId, active]);
   const series = useLiveQuery(() => db.series.get(clip.seriesId), [clip.seriesId]);
@@ -215,7 +220,7 @@ function FeedClip({ clip, index, active, soundOn, onSoundChange }: FeedClipProps
 
   return (
     <div className="feed-item" data-index={index}>
-      <div className="feed-video-wrap" onClick={togglePause}>
+      <div className={`feed-video-wrap ${androidVideoSpace ? 'android-video-space' : ''}`} onClick={togglePause}>
         {src && (
           <video
             ref={videoRef}

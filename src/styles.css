@@ -176,6 +176,12 @@ h2 {
   justify-content: center;
 }
 
+/* Android: the native video surface covers all DOM below the video box,
+   including the tab bar — keep the box clear of it while playing. */
+.android-video-space {
+  bottom: 64px;
+}
+
 .feed-video-wrap video {
   width: 100%;
   height: 100%;

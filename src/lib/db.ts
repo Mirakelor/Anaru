@@ -57,6 +57,19 @@ db.version(3).stores({
   settings: '++id',
 });
 
+// Unique per-series episode index: a raced import must never duplicate
+// episodes either.
+db.version(4).stores({
+  series: '++id, &slug, source, spoilerHidden, addedAt',
+  episodes: '++id, seriesId, &[seriesId+index]',
+  cues: '++id, episodeId, start',
+  clips: '++id, episodeId, seriesId, order',
+  words: '++id, lemma, reading, createdAt, clipId',
+  cards: '++id, wordId, due, state',
+  reviews: '++id, wordId, reviewedAt',
+  settings: '++id',
+});
+
 export async function getSettings(): Promise<AppSettings> {
   const existing = await db.settings.toCollection().first();
   if (!existing) {

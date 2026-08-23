@@ -152,8 +152,8 @@ export function SettingsPage() {
       <section className="settings-section about">
         <h2>About</h2>
         <p>
-          Anaru is free, offline and open data. Words come from the anime you watch; nothing is generated. Dictionary
-          data © JMdict (CC BY-SA), tokenization by Kuromoji (IPA dictionary), scheduling by FSRS.
+          Anaru is free, offline and open data. Dictionary data © JMdict (CC BY-SA), tokenization by Kuromoji (IPA
+          dictionary), scheduling by FSRS.
         </p>
         <p className="muted">Version {__APP_VERSION__}</p>
         {errors.length > 0 && (

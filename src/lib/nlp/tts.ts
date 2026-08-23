@@ -80,6 +80,16 @@ function escapeXml(text: string): string {
     .replace(/'/g, '&apos;');
 }
 
+function logDiag(msg: string) {
+  try {
+    const log = JSON.parse(localStorage.getItem('anaru-errors') ?? '[]');
+    log.push({ t: Date.now(), msg: `tts: ${msg}` });
+    localStorage.setItem('anaru-errors', JSON.stringify(log.slice(-10)));
+  } catch {
+    /* storage unavailable */
+  }
+}
+
 // Edge TTS over WebSocket — works from any origin (verified: the endpoint
 // accepts capacitor:// and tauri:// origins). Used on shells whose speechSynthesis
 // has no Japanese voice (e.g. Android without a Japanese TTS pack).
@@ -97,6 +107,7 @@ async function speakViaEdgeTts(text: string): Promise<boolean> {
     const chunks: Blob[] = [];
     return await new Promise<boolean>((resolve) => {
       const timer = setTimeout(() => {
+        logDiag('edge-tts timeout, no audio');
         ws.close();
         resolve(false);
       }, 20000);
@@ -125,10 +136,11 @@ async function speakViaEdgeTts(text: string): Promise<boolean> {
         }
       };
       ws.onerror = () => {
+        logDiag('edge-tts websocket error');
         clearTimeout(timer);
         resolve(false);
       };
-      ws.onclose = () => {
+      ws.onclose = (e) => {
         clearTimeout(timer);
         if (chunks.length > 0) {
           const url = URL.createObjectURL(new Blob(chunks, { type: 'audio/mpeg' }));
@@ -136,6 +148,7 @@ async function speakViaEdgeTts(text: string): Promise<boolean> {
           audio.play().catch(() => undefined);
           resolve(true);
         } else {
+          logDiag(`edge-tts closed (code ${e.code}) without audio`);
           resolve(false);
         }
       };

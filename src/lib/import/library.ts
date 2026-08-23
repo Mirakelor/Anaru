@@ -261,7 +261,26 @@ function resolveAgainst(base: string, href: string): string {
 }
 
 /** Ingest a content pack manifest: streams videos from the pack server. */
+let importInFlight: Promise<number> | null = null;
+
 export async function ingestPack(
+  manifestUrl: string,
+  onProgress?: (stage: string) => void,
+  signal?: AbortSignal,
+): Promise<number> {
+  // One import at a time: onboarding and the library auto-import can both
+  // fire, and concurrent runs raced on IndexedDB writes (Dexie crashed with
+  // a null transaction and episodes got duplicated).
+  if (importInFlight) return importInFlight;
+  importInFlight = (async () => {
+    return ingestPackInner(manifestUrl, onProgress, signal);
+  })().finally(() => {
+    importInFlight = null;
+  });
+  return importInFlight;
+}
+
+async function ingestPackInner(
   manifestUrl: string,
   onProgress?: (stage: string) => void,
   signal?: AbortSignal,
