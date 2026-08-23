@@ -170,9 +170,13 @@ async function speakViaEdgeTts(text: string): Promise<boolean> {
 }
 
 export async function speakJapanese(text: string): Promise<boolean> {
+  // Android: Capacitor platform API, with an https://localhost fallback in
+  // case the injected window.Capacitor is missing.
+  const loc = typeof window !== 'undefined' ? window.location : undefined;
   const isCapacitorAndroid =
-    typeof window !== 'undefined' &&
-    (window as unknown as { Capacitor?: { getPlatform?: () => string } }).Capacitor?.getPlatform?.() === 'android';
+    (typeof window !== 'undefined' &&
+      (window as unknown as { Capacitor?: { getPlatform?: () => string } }).Capacitor?.getPlatform?.() === 'android') ||
+    (loc?.protocol === 'https:' && loc.hostname === 'localhost');
   if (ttsAvailable() && !isCapacitorAndroid) {
     await ensureVoices();
     const voice = japaneseVoice();
@@ -183,12 +187,15 @@ export async function speakJapanese(text: string): Promise<boolean> {
       utterance.voice = voice;
       utterance.rate = 0.9;
       window.speechSynthesis.speak(utterance);
+      logDiag(`tts via speechSynthesis (${voice.name})`);
       return true;
     }
     logDiag(`tts: no japanese voice (${voices?.length ?? 0} voices)`);
   }
   if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+    logDiag('tts via tauri');
     return speakViaTauri(text);
   }
+  logDiag(`tts via edge (android=${isCapacitorAndroid})`);
   return speakViaEdgeTts(text);
 }
