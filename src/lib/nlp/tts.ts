@@ -159,7 +159,10 @@ async function speakViaEdgeTts(text: string): Promise<boolean> {
 }
 
 export async function speakJapanese(text: string): Promise<boolean> {
-  if (ttsAvailable()) {
+  const isCapacitorAndroid =
+    typeof window !== 'undefined' &&
+    (window as unknown as { Capacitor?: { getPlatform?: () => string } }).Capacitor?.getPlatform?.() === 'android';
+  if (ttsAvailable() && !isCapacitorAndroid) {
     await ensureVoices();
     const voice = japaneseVoice();
     if (voice) {
