@@ -38,6 +38,12 @@ export function initTokenizer(
           });
         }),
     );
+    tokenizerPromise = tokenizerPromise.catch((err) => {
+      // A transient failure (slow dict download, memory pressure) must not
+      // poison the tokenizer forever — allow the next call to retry.
+      tokenizerPromise = null;
+      throw err;
+    });
   }
   return tokenizerPromise;
 }

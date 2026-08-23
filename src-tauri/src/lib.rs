@@ -55,11 +55,55 @@ async fn fetch_text(url: String) -> Result<String, String> {
         .map_err(|e| e.to_string())
 }
 
+/// Synthesize Japanese speech for the desktop shell (WebKitGTK has no
+/// speechSynthesis). Prefers the edge-tts CLI for natural voices, falls back
+/// to espeak-ng for offline use. Returns the audio bytes as base64.
+#[tauri::command]
+async fn tts_speak(text: String) -> Result<String, String> {
+    use tokio::process::Command;
+
+    fn b64(bytes: &[u8]) -> String {
+        const TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+        let mut out = String::with_capacity(bytes.len().div_ceil(3) * 4);
+        for chunk in bytes.chunks(3) {
+            let n = (chunk[0] as u32) << 16
+                | (chunk.get(1).copied().unwrap_or(0) as u32) << 8
+                | chunk.get(2).copied().unwrap_or(0) as u32;
+            out.push(TABLE[(n >> 18) as usize & 63] as char);
+            out.push(TABLE[(n >> 12) as usize & 63] as char);
+            out.push(if chunk.len() > 1 { TABLE[(n >> 6) as usize & 63] as char } else { '=' });
+            out.push(if chunk.len() > 2 { TABLE[n as usize & 63] as char } else { '=' });
+        }
+        out
+    }
+
+    let short = text.chars().take(100).collect::<String>();
+    if let Ok(out) = Command::new("edge-tts")
+        .args(["--voice", "ja-JP-KeitaNeural", "--text", &short, "--write-media", "-"])
+        .output()
+        .await
+    {
+        if out.status.success() && !out.stdout.is_empty() {
+            return Ok(b64(&out.stdout));
+        }
+    }
+    if let Ok(out) = Command::new("espeak-ng")
+        .args(["-v", "ja", "-w", "/dev/stdout", &short])
+        .output()
+        .await
+    {
+        if out.status.success() && !out.stdout.is_empty() {
+            return Ok(b64(&out.stdout));
+        }
+    }
+    Err("No speech engine available (install edge-tts or espeak-ng).".into())
+}
+
 pub fn run() {
     #[cfg(target_os = "linux")]
     stderr_guard::quiet();
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![fetch_text])
+        .invoke_handler(tauri::generate_handler![fetch_text, tts_speak])
         .setup(|_app| {
             #[cfg(target_os = "linux")]
             stderr_guard::restore();

@@ -17,8 +17,6 @@ export function FuriganaText({ text, size = 'overlay', clip, episode, series, cu
   const line = useTokenized(text);
   const openWordSheet = useApp((s) => s.openWordSheet);
 
-  if (!line) return <span className="furi-plain">{text}</span>;
-
   const onWord = (segment: FuriganaSegment) => {
     openWordSheet({
       surface: segment.text,
@@ -32,6 +30,38 @@ export function FuriganaText({ text, size = 'overlay', clip, episode, series, cu
       cue: cue ?? null,
     });
   };
+
+  // Tokenizer not ready (or failed): keep the line tappable with a light
+  // han/kana split so lookup still works on every shell.
+  if (!line) {
+    const m = text.match(/[\p{Script=Han}]+|[ぁ-んァ-ン]+/u);
+    const fallback: FuriganaSegment | null = m
+      ? {
+          text: m[0],
+          parts: [{ text: m[0], ruby: null }],
+          tokenIndex: 0,
+          baseForm: m[0],
+          reading: '',
+          isWord: true,
+        }
+      : null;
+    return (
+      <span
+        className={`furi-plain ${fallback ? 'furi-fallback' : ''}`}
+        onClick={
+          fallback
+            ? (e) => {
+                e.stopPropagation();
+                onWord(fallback);
+              }
+            : undefined
+        }
+        role={fallback ? 'button' : undefined}
+      >
+        {text}
+      </span>
+    );
+  }
 
   return (
     <span className={`furi-line furi-${size}`}>

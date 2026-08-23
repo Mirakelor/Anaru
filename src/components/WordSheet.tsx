@@ -25,8 +25,8 @@ export function WordSheet() {
     if (!sheet) return;
     setEntries(null);
     setFailed(false);
-    setTtsOk(speakJapanese(sheet.surface));
     let cancelled = false;
+    speakJapanese(sheet.surface).then((ok) => !cancelled && setTtsOk(ok));
     lookupWord(sheet.surface, sheet.baseForm, sheet.reading)
       .then((result) => !cancelled && setEntries(result))
       .catch(() => !cancelled && setFailed(true));

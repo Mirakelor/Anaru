@@ -113,6 +113,11 @@ function FeedClip({ clip, index, active, soundOn, onSoundChange }: FeedClipProps
     }
   }, [wordSheet, src]);
 
+  // Android WebView renders a playing <video> on a native surface above all
+  // DOM layers, which would hide the lookup sheet — take the video out of the
+  // render tree while the sheet is open (state is kept, playback resumes).
+  const videoHidden = wordSheet !== null;
+
   useEffect(() => {
     if (!active) {
       setSrc(null);
@@ -220,6 +225,7 @@ function FeedClip({ clip, index, active, soundOn, onSoundChange }: FeedClipProps
             onTimeUpdate={onTimeUpdate}
             onCanPlay={() => setReady(true)}
             onLoadedData={() => setReady(true)}
+            style={videoHidden ? { display: 'none' } : undefined}
           />
         )}
         {active && !ready && (
@@ -281,8 +287,40 @@ interface SubtitleBlockProps {
 
 function SubtitleBlock({ cue, clip, episode, series, showRomaji, showJapanese, showEnglish }: SubtitleBlockProps) {
   const line = useTokenized(cue.text);
+  const openWordSheet = useApp((s) => s.openWordSheet);
+
+  const lookUp = () => {
+    const segment =
+      line?.segments.find((s) => s.isWord) ??
+      (() => {
+        const m = cue.text.match(/[\p{Script=Han}]+|[ぁ-んァ-ン]+/u);
+        return m
+          ? {
+              text: m[0],
+              parts: [{ text: m[0], ruby: null }],
+              tokenIndex: 0,
+              baseForm: m[0],
+              reading: '',
+              isWord: true,
+            }
+          : null;
+      })();
+    if (!segment) return;
+    openWordSheet({
+      surface: segment.text,
+      baseForm: segment.baseForm,
+      reading: segment.reading,
+      sentence: cue.text,
+      sentenceTranslation: cue.translation ?? '',
+      clip: clip ?? null,
+      episode: episode ?? null,
+      series: series ?? null,
+      cue: cue ?? null,
+    });
+  };
+
   return (
-    <div className="subtitle-block">
+    <div className="subtitle-block" onClick={(e) => { e.stopPropagation(); lookUp(); }}>
       {showRomaji && (
         <p className="subtitle-romaji">{line ? line.romaji : ''}</p>
       )}
