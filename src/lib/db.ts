@@ -44,6 +44,19 @@ db.version(2).stores({
   settings: '++id',
 });
 
+// Unique slug index: two concurrent imports (onboarding + library auto-import)
+// must never produce duplicate series rows.
+db.version(3).stores({
+  series: '++id, &slug, source, spoilerHidden, addedAt',
+  episodes: '++id, seriesId, [seriesId+index]',
+  cues: '++id, episodeId, start',
+  clips: '++id, episodeId, seriesId, order',
+  words: '++id, lemma, reading, createdAt, clipId',
+  cards: '++id, wordId, due, state',
+  reviews: '++id, wordId, reviewedAt',
+  settings: '++id',
+});
+
 export async function getSettings(): Promise<AppSettings> {
   const existing = await db.settings.toCollection().first();
   if (!existing) {

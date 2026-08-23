@@ -66,8 +66,16 @@ export async function createSeries(input: {
     source: input.source,
     addedAt: Date.now(),
   };
-  const id = await db.series.add(series as Series);
-  return { ...series, id };
+  try {
+    const id = await db.series.add(series as Series);
+    return { ...series, id };
+  } catch {
+    // A concurrent import (onboarding + library auto-import) inserted the
+    // same slug first; the unique index rejected ours — return theirs.
+    const winner = await db.series.where('slug').equals(slug).first();
+    if (winner) return winner;
+    throw new Error(`Could not create series "${input.title}".`);
+  }
 }
 
 export async function importEpisode(
@@ -299,6 +307,7 @@ export async function ingestPack(
 
   // Phase 2: everything is downloaded — now write to the database.
   let clips = 0;
+  let skipped = 0;
   const created = new Map<string, Series>();
   for (const { series: packSeries, episode: packEpisode, subtitleText, translationText, duration } of fetched) {
     const key = packSeries.slug ?? packSeries.title;
@@ -312,20 +321,30 @@ export async function ingestPack(
       });
       created.set(key, series);
     }
-    const result = await importRemoteEpisode(
-      series,
-      {
-        index: packEpisode.index,
-        title: packEpisode.title ?? `Episode ${packEpisode.index}`,
-        videoUrl: resolveAgainst(manifestUrl, packEpisode.video),
-        subtitleName: packEpisode.subtitle.split('/').pop() ?? 'subtitles.srt',
-        subtitleText,
-        translationText,
-      },
-      undefined,
-      duration,
-    );
-    clips += result.clipCount;
+    try {
+      const result = await importRemoteEpisode(
+        series,
+        {
+          index: packEpisode.index,
+          title: packEpisode.title ?? `Episode ${packEpisode.index}`,
+          videoUrl: resolveAgainst(manifestUrl, packEpisode.video),
+          subtitleName: packEpisode.subtitle.split('/').pop() ?? 'subtitles.srt',
+          subtitleText,
+          translationText,
+        },
+        undefined,
+        duration,
+      );
+      clips += result.clipCount;
+    } catch (err) {
+      // One bad episode must not zero out the whole pack: skip it and keep
+      // importing the rest, so the series never appears with 0 clips.
+      skipped += 1;
+      onProgress?.(`Skipped ${packSeries.title} — episode ${packEpisode.index} (${err instanceof Error ? err.message : 'error'})`);
+    }
+  }
+  if (skipped > 0 && clips === 0) {
+    throw new Error(`No episodes could be imported (${skipped} skipped). Check the pack's subtitles and video codecs.`);
   }
   return clips;
 }

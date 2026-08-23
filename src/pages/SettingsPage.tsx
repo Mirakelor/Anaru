@@ -80,6 +80,15 @@ export function SettingsPage() {
           </div>
         </div>
         <label className="setting-row">
+          <span>Shuffle clips</span>
+          <input
+            type="checkbox"
+            checked={settings.shufflePlayback}
+            onChange={(e) => updateSettings({ shufflePlayback: e.target.checked })}
+          />
+        </label>
+        <p className="settings-hint">Off = clips play in story order; on = random order.</p>
+        <label className="setting-row">
           <span>Loop each clip</span>
           <input
             type="checkbox"

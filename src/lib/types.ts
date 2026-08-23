@@ -98,6 +98,7 @@ export interface AppSettings {
   playbackRate: number;
   autoReplay: boolean;
   listeningCards: boolean;
+  shufflePlayback: boolean;
   themeId: string;
   onboarded: boolean;
 }
@@ -107,6 +108,7 @@ export const DEFAULT_SETTINGS: Omit<AppSettings, 'id'> = {
   playbackRate: 1,
   autoReplay: true,
   listeningCards: true,
+  shufflePlayback: true,
   themeId: 'ink',
   onboarded: false,
 };

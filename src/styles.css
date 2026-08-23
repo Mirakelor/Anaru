@@ -852,7 +852,7 @@ h2 {
 .review-scene {
   position: relative;
   aspect-ratio: 9 / 12;
-  max-height: 42vh;
+  max-height: 58vh;
   margin-inline: auto;
   background: #000;
 }

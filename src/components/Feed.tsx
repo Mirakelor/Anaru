@@ -19,6 +19,7 @@ function shuffle<T>(items: T[]): T[] {
 export function FeedPage() {
   const filter = useApp((s) => s.feedSeriesFilter);
   const series = useLiveQuery(() => db.series.toArray(), []);
+  const settings = useLiveQuery(() => db.settings.toCollection().first(), []);
   const clips = useLiveQuery(async () => {
     const hidden = new Set((await db.series.filter((s) => s.spoilerHidden).toArray()).map((s) => s.id));
     const all = await db.clips.toArray();
@@ -29,7 +30,10 @@ export function FeedPage() {
   // satisfy autoplay policies), but switching clips must not reset it.
   const [soundOn, setSoundOn] = useState(false);
 
-  const ordered = useMemo(() => (clips ? shuffle(clips) : []), [clips]);
+  const ordered = useMemo(() => {
+    if (!clips) return [];
+    return settings?.shufflePlayback !== false ? shuffle(clips) : [...clips].sort((a, b) => a.order - b.order);
+  }, [clips, settings?.shufflePlayback]);
   const [current, setCurrent] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
