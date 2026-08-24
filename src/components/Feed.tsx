@@ -24,18 +24,26 @@ function shuffle<T>(items: T[]): T[] {
   return out;
 }
 
-function readResume(): { clipId: number; time: number } | null {
+type ResumePos = { clipId: number; time: number };
+type ResumeStore = { story?: ResumePos; shuffle?: ResumePos };
+
+const EMPTY_RESUME: ResumeStore = {};
+
+function readResume(): ResumeStore {
   try {
     const raw = localStorage.getItem(RESUME_KEY);
-    if (!raw) return null;
-    const v = JSON.parse(raw) as { clipId?: unknown; time?: unknown };
-    if (typeof v?.clipId === 'number' && typeof v?.time === 'number') {
-      return { clipId: v.clipId, time: v.time };
-    }
+    if (!raw) return EMPTY_RESUME;
+    const v = JSON.parse(raw) as ResumeStore;
+    const ok = (p: unknown): p is ResumePos =>
+      typeof (p as ResumePos)?.clipId === 'number' && typeof (p as ResumePos)?.time === 'number';
+    return {
+      story: ok(v?.story) ? v.story : undefined,
+      shuffle: ok(v?.shuffle) ? v.shuffle : undefined,
+    };
   } catch {
     /* storage unavailable */
   }
-  return null;
+  return EMPTY_RESUME;
 }
 
 export function FeedPage() {
@@ -64,10 +72,11 @@ export function FeedPage() {
   }, [clips, episodes, series, settings?.shufflePlayback]);
   const story = settings?.shufflePlayback === false;
 
-  // Story mode remembers the last clip; jump back to it when the feed opens.
+  // Story and shuffle keep separate positions; a mode with no saved position
+  // starts at the top instead of continuing where the other mode was.
   useEffect(() => {
-    if (!story || resumeClipId !== null || ordered.length === 0) return;
-    const r = resume.current;
+    if (resumeClipId !== null || ordered.length === 0) return;
+    const r = (story ? resume.current.story : resume.current.shuffle) ?? null;
     if (!r) return;
     const idx = ordered.findIndex((c) => c.id === r.clipId);
     if (idx === -1) return;
@@ -128,7 +137,11 @@ export function FeedPage() {
                 onSoundChange={setSoundOn}
                 series={seriesById.get(clip.seriesId) ?? null}
                 settings={settings}
-                resumeTime={resumeClipId === clip.id ? (resume.current?.time ?? undefined) : undefined}
+                resumeTime={
+                  resumeClipId === clip.id
+                    ? ((story ? resume.current.story : resume.current.shuffle)?.time ?? undefined)
+                    : undefined
+                }
               />
             </div>
           );
@@ -238,27 +251,30 @@ function FeedClip({ clip, index, active, soundOn, onSoundChange, series, setting
     setReady(false);
   }, [src]);
 
-  // Story mode: keep the feed's position (throttled) so it resumes where the
-  // user left off. A clip never auto-advances — playback stops at its end.
-  const saveResume = useCallback((clipId: number, t: number) => {
-    const now = Date.now();
-    if (now - lastSaveRef.current < 3000) return;
-    lastSaveRef.current = now;
-    try {
-      localStorage.setItem(RESUME_KEY, JSON.stringify({ clipId, time: Math.max(0, t) }));
-    } catch {
-      /* storage unavailable */
-    }
-  }, []);
+  // Keep the feed's position (throttled) per mode — story and shuffle never
+  // share a position. A clip never auto-advances; playback stops at its end.
+  const saveResume = useCallback(
+    (clipId: number, t: number) => {
+      const now = Date.now();
+      if (now - lastSaveRef.current < 3000) return;
+      lastSaveRef.current = now;
+      try {
+        const store = readResume();
+        store[story ? 'story' : 'shuffle'] = { clipId, time: Math.max(0, t) };
+        localStorage.setItem(RESUME_KEY, JSON.stringify(store));
+      } catch {
+        /* storage unavailable */
+      }
+    },
+    [story],
+  );
 
   const onTimeUpdate = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
     const t = video.currentTime;
     setTime(t);
-    if (story) {
-      if (clip.id !== undefined) saveResume(clip.id, t);
-    }
+    if (clip.id !== undefined) saveResume(clip.id, t);
     if (t >= clip.end - 0.03) {
       if (settings?.autoReplay ?? true) {
         video.currentTime = clip.start;
@@ -267,7 +283,7 @@ function FeedClip({ clip, index, active, soundOn, onSoundChange, series, setting
         setPaused(true);
       }
     }
-  }, [clip, story, saveResume, settings?.autoReplay]);
+  }, [clip, saveResume, settings?.autoReplay]);
 
   const togglePause = () => {
     const video = videoRef.current;
