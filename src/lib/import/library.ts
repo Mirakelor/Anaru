@@ -262,6 +262,7 @@ function resolveAgainst(base: string, href: string): string {
 
 /** Ingest a content pack manifest: streams videos from the pack server. */
 let importInFlight: Promise<number> | null = null;
+let importUrl: string | null = null;
 
 export async function ingestPack(
   manifestUrl: string,
@@ -269,13 +270,23 @@ export async function ingestPack(
   signal?: AbortSignal,
 ): Promise<number> {
   // One import at a time: onboarding and the library auto-import can both
-  // fire, and concurrent runs raced on IndexedDB writes (Dexie crashed with
-  // a null transaction and episodes got duplicated).
-  if (importInFlight) return importInFlight;
+  // fire (often for the SAME starter pack URL), and concurrent runs raced on
+  // IndexedDB writes (Dexie crashed with a null transaction and episodes got
+  // duplicated). A queued request for the same URL reuses the running import;
+  // a different URL waits for the lock, then imports its own pack — never
+  // silently resolve with the wrong pack's result.
+  const previous = importInFlight;
+  if (previous) {
+    if (importUrl === manifestUrl) return previous;
+    await previous.catch(() => undefined);
+    return ingestPack(manifestUrl, onProgress, signal);
+  }
+  importUrl = manifestUrl;
   importInFlight = (async () => {
     return ingestPackInner(manifestUrl, onProgress, signal);
   })().finally(() => {
     importInFlight = null;
+    importUrl = null;
   });
   return importInFlight;
 }

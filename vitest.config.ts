@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    globalSetup: ['./src/test/global-setup.ts'],
     globals: true,
     exclude: ['node_modules', 'e2e', 'mobile', 'desktop', 'dist'],
   },

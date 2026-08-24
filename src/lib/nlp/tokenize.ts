@@ -17,10 +17,24 @@ export interface FuriganaSegment {
 
 type KuromojiModule = { builder?: unknown; default?: unknown };
 
+// Vendored patched build (see scripts/patch-kuromoji.mjs): falls back to the
+// unpacked dict files that Android's aapt2 produces, so the tokenizer works
+// on every shell.
 async function loadKuromoji(): Promise<{ builder: typeof kuromoji.builder }> {
-  const mod = (await import('kuromoji')) as unknown as KuromojiModule;
+  const mod = (await import('./vendor/kuromoji.js')) as unknown as KuromojiModule;
   const api = (mod.builder ? mod : mod.default) as { builder: typeof kuromoji.builder };
   return api;
+}
+
+function logDiag(msg: string) {
+  try {
+    if (localStorage.getItem('anaru-diagnostics') !== '1') return;
+    const log = JSON.parse(localStorage.getItem('anaru-errors') ?? '[]');
+    log.push({ t: Date.now(), msg: `tokenizer: ${msg}` });
+    localStorage.setItem('anaru-errors', JSON.stringify(log.slice(-10)));
+  } catch {
+    /* storage unavailable */
+  }
 }
 
 let tokenizerPromise: Promise<kuromoji.Tokenizer<kuromoji.IpadicFeatures>> | null = null;
@@ -38,12 +52,18 @@ export function initTokenizer(
           });
         }),
     );
-    tokenizerPromise = tokenizerPromise.catch((err) => {
-      // A transient failure (slow dict download, memory pressure) must not
-      // poison the tokenizer forever — allow the next call to retry.
-      tokenizerPromise = null;
-      throw err;
-    });
+    tokenizerPromise = tokenizerPromise
+      .then((t) => {
+        logDiag('dict ok');
+        return t;
+      })
+      .catch((err) => {
+        // A transient failure (slow dict download, memory pressure) must not
+        // poison the tokenizer forever — allow the next call to retry.
+        tokenizerPromise = null;
+        logDiag(`dict load failed: ${err instanceof Error ? err.message : String(err)}`);
+        throw err;
+      });
   }
   return tokenizerPromise;
 }

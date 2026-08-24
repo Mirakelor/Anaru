@@ -106,6 +106,21 @@ export function SettingsPage() {
       </section>
 
       <section className="settings-section">
+        <h2>Audio</h2>
+        <label className="setting-row">
+          <span>Auto-play word pronunciation on lookup</span>
+          <input
+            type="checkbox"
+            checked={settings.wordTts}
+            onChange={(e) => updateSettings({ wordTts: e.target.checked })}
+          />
+        </label>
+        <p className="settings-hint">
+          Off by default: the word sheet always shows a replay button you can tap anytime.
+        </p>
+      </section>
+
+      <section className="settings-section">
         <h2>Reviews</h2>
         <label className="setting-row">
           <span>Listening cards (audio first)</span>

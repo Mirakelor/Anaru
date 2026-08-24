@@ -14,7 +14,9 @@ export function WordSheet() {
   const close = useApp((s) => s.closeWordSheet);
   const [entries, setEntries] = useState<DictEntry[] | null>(null);
   const [failed, setFailed] = useState(false);
-  const [ttsOk, setTtsOk] = useState(false);
+  const settings = useLiveQuery(() => db.settings.toCollection().first(), []);
+  // Auto-play when the sheet opens; the replay button below always works.
+  const wordTts = settings?.wordTts === true;
 
   const saved = useLiveQuery(async () => {
     if (!sheet) return undefined;
@@ -26,7 +28,6 @@ export function WordSheet() {
     setEntries(null);
     setFailed(false);
     let cancelled = false;
-    speakJapanese(sheet.surface).then((ok) => !cancelled && setTtsOk(ok));
     lookupWord(sheet.surface, sheet.baseForm, sheet.reading)
       .then((result) => !cancelled && setEntries(result))
       .catch(() => !cancelled && setFailed(true));
@@ -34,6 +35,11 @@ export function WordSheet() {
       cancelled = true;
     };
   }, [sheet]);
+
+  useEffect(() => {
+    if (!sheet || !wordTts) return;
+    speakJapanese(sheet.surface);
+  }, [sheet, wordTts]);
 
   if (!sheet) return null;
 
@@ -86,7 +92,6 @@ export function WordSheet() {
             </p>
           </div>
           <div className="sheet-head-side">
-            {ttsOk && (
               <button
                 type="button"
                 className="sheet-speak"
@@ -97,7 +102,6 @@ export function WordSheet() {
                   <path d="M3 10v4h4l5 5V5L7 10H3zm13.5 2a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z" />
                 </svg>
               </button>
-            )}
             {best?.jlpt && <span className={`jlpt-badge n${best.jlpt}`}>N{best.jlpt}</span>}
           </div>
         </div>

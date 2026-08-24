@@ -6,7 +6,7 @@ bite-sized lessons. Cross-platform: Web/PWA, Android, iOS, Windows, macOS, Linux
 - Vertical feed of short anime clips with subtitles (story order or shuffled — Settings → Shuffle clips)
 - Furigana on every kanji
 - Five subtitle modes: romaji → Japanese+romaji → Japanese → Japanese+English → video only
-- Tap any word → dictionary lookup → save it
+- Tap any word → dictionary lookup with pronunciation → save it
 - FSRS spaced-repetition review deck with the source scene on each card
 - Series library with spoiler protection (hide shows you haven't watched)
 - Listening cards, stats, streaks, daily goals

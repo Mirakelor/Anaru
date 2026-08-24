@@ -64,6 +64,13 @@ test('pack manifest ingestion loads remote episodes', async ({ page }) => {
   // Serve the local fixture as a "remote" pack over the dev server is not
   // possible, so exercise the pack modal error path for a bad URL first.
   await page.getByRole('button', { name: 'Library' }).click();
+  // The empty library auto-imports the starter pack; wait until it actually
+  // starts and finishes so the import lock does not route the bad-URL
+  // request to the starter pack. (The text may appear and vanish before the
+  // first check if the pack loads instantly.)
+  const loading = page.getByText('Loading the starter pack…');
+  await loading.waitFor({ state: 'visible', timeout: 30_000 }).catch(() => undefined);
+  await expect(loading).toBeHidden({ timeout: 90_000 });
   await page.getByRole('button', { name: 'Load pack' }).click();
   await page.getByPlaceholder(/manifest\.json/).fill('http://localhost:5173/nope/manifest.json');
   await page.getByRole('button', { name: 'Load pack', exact: true }).last().click();

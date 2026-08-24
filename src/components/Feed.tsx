@@ -4,6 +4,7 @@ import { db, mediaUrl } from '../lib/db';
 import type { Clip, Cue, Episode, Series } from '../lib/types';
 
 import { cuesForClip } from '../lib/import/library';
+import { storyOrder } from '../lib/feed';
 import { useApp } from '../state/store';
 import { FuriganaText } from './FuriganaText';
 import { useTokenized } from '../lib/nlp/useTokenized';
@@ -20,6 +21,7 @@ function shuffle<T>(items: T[]): T[] {
 export function FeedPage() {
   const filter = useApp((s) => s.feedSeriesFilter);
   const series = useLiveQuery(() => db.series.toArray(), []);
+  const episodes = useLiveQuery(() => db.episodes.toArray(), []);
   const settings = useLiveQuery(() => db.settings.toCollection().first(), []);
   const clips = useLiveQuery(async () => {
     const hidden = new Set((await db.series.filter((s) => s.spoilerHidden).toArray()).map((s) => s.id));
@@ -33,8 +35,9 @@ export function FeedPage() {
 
   const ordered = useMemo(() => {
     if (!clips) return [];
-    return settings?.shufflePlayback !== false ? shuffle(clips) : [...clips].sort((a, b) => a.order - b.order);
-  }, [clips, settings?.shufflePlayback]);
+    if (settings?.shufflePlayback !== false) return shuffle(clips);
+    return storyOrder(clips, episodes ?? [], series ?? []);
+  }, [clips, episodes, series, settings?.shufflePlayback]);
   const [current, setCurrent] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 

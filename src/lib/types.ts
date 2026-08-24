@@ -99,6 +99,7 @@ export interface AppSettings {
   autoReplay: boolean;
   listeningCards: boolean;
   shufflePlayback: boolean;
+  wordTts: boolean;
   diagnostics: boolean;
   themeId: string;
   onboarded: boolean;
@@ -110,6 +111,7 @@ export const DEFAULT_SETTINGS: Omit<AppSettings, 'id'> = {
   autoReplay: true,
   listeningCards: true,
   shufflePlayback: true,
+  wordTts: false,
   diagnostics: false,
   themeId: 'ink',
   onboarded: false,
