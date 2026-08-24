@@ -95,8 +95,7 @@ export function SettingsPage() {
           />
         </label>
         <p className="settings-hint">
-          Off = story order: clips auto-play one after another and the feed resumes where you left off. On = random
-          order.
+          Off = story order: clips play in episode order and the feed resumes where you left off. On = random order.
         </p>
         <label className="setting-row">
           <span>Loop each clip</span>

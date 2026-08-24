@@ -238,14 +238,8 @@ function FeedClip({ clip, index, active, soundOn, onSoundChange, series, setting
     setReady(false);
   }, [src]);
 
-  // Story mode: keep the feed's position (throttled) and advance to the next
-  // clip when this one ends, instead of looping it.
-  const advance = useCallback(() => {
-    const container = videoRef.current?.closest('.feed') as HTMLElement | null;
-    if (!container) return;
-    container.scrollTo({ top: (index + 1) * container.clientHeight, behavior: 'smooth' });
-  }, [index]);
-
+  // Story mode: keep the feed's position (throttled) so it resumes where the
+  // user left off. A clip never auto-advances — playback stops at its end.
   const saveResume = useCallback((clipId: number, t: number) => {
     const now = Date.now();
     if (now - lastSaveRef.current < 3000) return;
@@ -264,8 +258,8 @@ function FeedClip({ clip, index, active, soundOn, onSoundChange, series, setting
     setTime(t);
     if (story) {
       if (clip.id !== undefined) saveResume(clip.id, t);
-      if (t >= clip.end - 0.05) advance();
-    } else if (t >= clip.end - 0.03) {
+    }
+    if (t >= clip.end - 0.03) {
       if (settings?.autoReplay ?? true) {
         video.currentTime = clip.start;
       } else {
@@ -273,7 +267,7 @@ function FeedClip({ clip, index, active, soundOn, onSoundChange, series, setting
         setPaused(true);
       }
     }
-  }, [clip, story, saveResume, advance, settings?.autoReplay]);
+  }, [clip, story, saveResume, settings?.autoReplay]);
 
   const togglePause = () => {
     const video = videoRef.current;
