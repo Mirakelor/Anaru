@@ -195,6 +195,17 @@ export async function importRemoteEpisode(
     throw new Error('No usable subtitle lines were found in that file.');
   }
   const duration = knownDuration ?? (await probeDurationUrl(input.videoUrl));
+  // Re-importing the same pack must not crash on the unique [seriesId+index]
+  // index: replace the old episode (and its cues/clips) instead of failing.
+  const existing = await db.episodes
+    .where('[seriesId+index]')
+    .equals([series.id!, input.index])
+    .first();
+  if (existing) {
+    await db.cues.where('episodeId').equals(existing.id!).delete();
+    await db.clips.where('episodeId').equals(existing.id!).delete();
+    await db.episodes.delete(existing.id!);
+  }
   const episode: Episode = {
     seriesId: series.id!,
     index: input.index,

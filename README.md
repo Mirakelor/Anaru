@@ -3,7 +3,7 @@
 Free, offline, no-account Japanese learning app that turns anime scenes into
 bite-sized lessons. Cross-platform: Web/PWA, Android, iOS, Windows, macOS, Linux.
 
-- Vertical feed of short anime clips with subtitles (story order or shuffled — Settings → Shuffle clips)
+- Vertical feed of short anime clips — story order auto-plays and resumes where you left off, or shuffle (Settings → Shuffle clips)
 - Furigana on every kanji
 - Five subtitle modes: romaji → Japanese+romaji → Japanese → Japanese+English → video only
 - Tap any word → dictionary lookup with pronunciation → save it

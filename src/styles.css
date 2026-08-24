@@ -157,6 +157,17 @@ h2 {
   display: none;
 }
 
+/* Virtualized feed: each clip sits in an absolutely-positioned viewport-high
+   slot (the spacer div owns the total scroll height). */
+.feed-slot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
 .feed-item {
   height: 100%;
   scroll-snap-align: start;

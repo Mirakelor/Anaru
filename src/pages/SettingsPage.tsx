@@ -94,7 +94,10 @@ export function SettingsPage() {
             onChange={(e) => updateSettings({ shufflePlayback: e.target.checked })}
           />
         </label>
-        <p className="settings-hint">Off = clips play in story order; on = random order.</p>
+        <p className="settings-hint">
+          Off = story order: clips auto-play one after another and the feed resumes where you left off. On = random
+          order.
+        </p>
         <label className="setting-row">
           <span>Loop each clip</span>
           <input

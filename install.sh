@@ -15,13 +15,13 @@ trap 'rm -rf "$TMP"' EXIT
 
 if [[ -z "$VERSION" ]]; then
   echo "→ Resolving latest release of $REPO…"
-  VERSION="$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p' | head -1)"
+  VERSION="$(curl -fsSL --retry 5 --retry-all-errors --retry-delay 3 --connect-timeout 30 "https://api.github.com/repos/$REPO/releases/latest" | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p' | head -1)"
 fi
 echo "→ Version: $VERSION"
 
 asset_url() {
   local name="$1"
-  curl -fsSL "https://api.github.com/repos/$REPO/releases/tags/$VERSION" |
+  curl -fsSL --retry 5 --retry-all-errors --retry-delay 3 --connect-timeout 30 "https://api.github.com/repos/$REPO/releases/tags/$VERSION" |
     sed -n 's/.*"browser_download_url": *"\([^"]*'"$name"'\)".*/\1/p' | head -1
 }
 
@@ -34,7 +34,7 @@ install_linux_shortcut() {
   mkdir -p "$apps" "$icons"
   if [[ ! -f "$icons/anaru.png" ]]; then
     echo "→ Fetching app icon…"
-    curl -fsSL --retry 3 -o "$icons/anaru.png" \
+    curl -fsSL --retry 5 --retry-all-errors --retry-delay 3 --connect-timeout 30 -o "$icons/anaru.png" \
       "https://raw.githubusercontent.com/$REPO/main/site/icon.png" || true
   fi
   cat > "$apps/anaru.desktop" <<EOF
@@ -61,14 +61,14 @@ case "$OS" in
     if [[ "${1:-}" == "--deb" ]]; then
       URL="$(asset_url 'amd64.deb')"
       echo "→ Downloading .deb…"
-      curl -fL --retry 3 -o "$TMP/anaru.deb" "$URL"
+      curl -fL --retry 5 --retry-all-errors --retry-delay 3 --connect-timeout 30 -o "$TMP/anaru.deb" "$URL"
       echo "→ Installing with apt (sudo)…"
       sudo apt-get install -y "$TMP/anaru.deb"
       echo "✔ Installed. Run: anaru"
     else
       URL="$(asset_url 'amd64.AppImage')"
       echo "→ Downloading AppImage…"
-      curl -fL --retry 3 -o "$TMP/anaru.AppImage" "$URL"
+      curl -fL --retry 5 --retry-all-errors --retry-delay 3 --connect-timeout 30 -o "$TMP/anaru.AppImage" "$URL"
       chmod +x "$TMP/anaru.AppImage"
       # Extract to disk instead of running from the archive: the AppImage serves
       # its code pages over FUSE, and replacing the AppImage file while the app
@@ -108,7 +108,7 @@ EOF
       URL="$(asset_url 'aarch64.dmg')"
     fi
     echo "→ Downloading .dmg…"
-    curl -fL --retry 3 -o "$TMP/anaru.dmg" "$URL"
+    curl -fL --retry 5 --retry-all-errors --retry-delay 3 --connect-timeout 30 -o "$TMP/anaru.dmg" "$URL"
     hdiutil attach "$TMP/anaru.dmg" -nobrowse -mountpoint "$TMP/mnt"
     echo "→ Copying Anaru.app to /Applications (sudo)…"
     sudo cp -R "$TMP/mnt/Anaru.app" /Applications/
