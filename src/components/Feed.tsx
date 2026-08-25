@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, mediaUrl } from '../lib/db';
 import type { AppSettings, Clip, Cue, Episode, Series } from '../lib/types';
@@ -62,6 +62,7 @@ export function FeedPage() {
   const [soundOn, setSoundOn] = useState(false);
   const [current, setCurrent] = useState(0);
   const [resumeClipId, setResumeClipId] = useState<number | null>(null);
+  const [pageH, setPageH] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const resume = useRef(readResume());
 
@@ -71,6 +72,24 @@ export function FeedPage() {
     return storyOrder(clips, episodes ?? [], series ?? []);
   }, [clips, episodes, series, settings?.shufflePlayback]);
   const story = settings?.shufflePlayback === false;
+
+  // The container's real height drives the virtualized slots: viewport units
+  // (100vh) diverge from it by the tab bar / browser chrome, which offsets
+  // every screen and pushes subtitles off-view on landscape tablets.
+  // Re-runs once data is ready, because the container only exists then.
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const update = () => setPageH(container.clientHeight || 0);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(container);
+    window.addEventListener('resize', update);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', update);
+    };
+  }, [ordered.length]);
 
   // Story and shuffle keep separate positions; a mode with no saved position
   // starts at the top instead of continuing where the other mode was.
@@ -114,20 +133,24 @@ export function FeedPage() {
     );
   }
 
+  // Height not measured yet: render the empty scroller so the measurement
+  // effect above finds its container and re-runs once data is ready.
+  if (pageH === 0) return <div className="feed" ref={containerRef} />;
+
   const start = Math.max(0, current - WINDOW);
   const end = Math.min(ordered.length, current + WINDOW + 1);
   const seriesById = new Map(series.map((s) => [s.id, s]));
 
   return (
     <div className="feed" ref={containerRef}>
-      <div style={{ height: `${ordered.length * 100}vh` }}>
+      <div style={{ height: ordered.length * pageH }}>
         {ordered.slice(start, end).map((clip, i) => {
           const idx = start + i;
           return (
             <div
               key={clip.id}
               className="feed-slot"
-              style={{ top: `${idx * 100}vh` }}
+              style={{ top: idx * pageH, height: pageH }}
             >
               <FeedClip
                 clip={clip}

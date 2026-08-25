@@ -157,13 +157,14 @@ h2 {
   display: none;
 }
 
-/* Virtualized feed: each clip sits in an absolutely-positioned viewport-high
-   slot (the spacer div owns the total scroll height). */
+/* Virtualized feed: each clip sits in an absolutely-positioned slot whose
+   height is set inline from the container's measured height (viewport units
+   drift from it by the tab bar / browser chrome, which misaligns screens on
+   landscape tablets). */
 .feed-slot {
   position: absolute;
   left: 0;
   right: 0;
-  height: 100vh;
   scroll-snap-align: start;
   scroll-snap-stop: always;
 }
@@ -921,15 +922,10 @@ h2 {
   margin-top: 8px;
 }
 
-.review-hint {
-  color: var(--accent-2);
+.review-gloss-front {
+  font-size: 1.5rem;
   font-weight: 600;
-  margin: 12px 0;
-}
-
-.review-reading-hidden {
-  visibility: hidden;
-  user-select: none;
+  margin: 12px 0 4px;
 }
 
 .review-answer {
@@ -1696,5 +1692,18 @@ h2 {
   .sheet {
     border-radius: 22px;
     border-bottom: 1px solid var(--line);
+  }
+}
+
+/* Landscape screens are short: free scrolling (no snap) so subtitles never
+   get yanked to the next clip, and a smaller review scene so the card text
+   fits on screen. */
+@media (orientation: landscape) {
+  .feed {
+    scroll-snap-type: none;
+  }
+
+  .review-scene {
+    max-height: 46vh;
   }
 }

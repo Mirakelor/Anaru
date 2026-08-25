@@ -93,21 +93,27 @@ function ReviewSession({ item, remaining, onGraded }: ReviewSessionProps) {
           {!revealed && (
             <p className="review-tip">
               {listening
-                ? 'Listen to the scene, recall the word, then reveal the answer.'
+                ? 'Hear the scene and recall the Japanese word for the meaning shown.'
                 : 'Watch the scene, recall the word, then reveal the answer.'}
             </p>
           )}
           {listening && !revealed ? (
-            <p className="review-hint">Listen and recall the word</p>
+            <div className="review-listen-front">
+              <p className="review-gloss-front">{item.word.gloss || 'No definition saved'}</p>
+              {item.word.sentenceTranslation && (
+                <p className="review-translation">{item.word.sentenceTranslation}</p>
+              )}
+            </div>
           ) : (
             <p className="review-word">
               <FuriganaText text={item.word.lemma} size="sheet" />
             </p>
           )}
-          <p className="review-sentence">
-            <FuriganaText text={item.word.sentence} size="sheet" />
-          </p>
-          {listening && !revealed && <p className="review-reading-hidden">{item.word.reading}</p>}
+          {(!listening || revealed) && (
+            <p className="review-sentence">
+              <FuriganaText text={item.word.sentence} size="sheet" />
+            </p>
+          )}
           {!revealed && (
             <button type="button" className="btn btn-primary review-reveal" onClick={() => setRevealed(true)}>
               Show answer
