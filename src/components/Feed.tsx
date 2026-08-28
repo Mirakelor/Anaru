@@ -102,15 +102,40 @@ export function FeedPage() {
     setResumeClipId(r.clipId);
     setCurrent(idx);
     const container = containerRef.current;
-    if (container) container.scrollTop = idx * container.clientHeight;
+    if (container) {
+      // Spacer height depends on pageH, which lands after this effect; defer
+      // the scroll until the layout with slots is committed.
+      requestAnimationFrame(() => {
+        container.scrollTop = idx * container.clientHeight;
+      });
+    }
   }, [story, resumeClipId, ordered]);
+
+  // Position must be saved as soon as the user scrolls to another clip —
+  // waiting for the video's timeupdate would keep the old position when the
+  // next clip is still loading or autoplay is blocked.
+  const savePosition = useCallback(
+    (clipId: number, t: number) => {
+      try {
+        const store = readResume();
+        store[story ? 'story' : 'shuffle'] = { clipId, time: Math.max(0, t) };
+        localStorage.setItem(RESUME_KEY, JSON.stringify(store));
+      } catch {
+        /* storage unavailable */
+      }
+    },
+    [story],
+  );
 
   const onScroll = useCallback(() => {
     const container = containerRef.current;
     if (!container || container.clientHeight === 0) return;
     const idx = Math.round(container.scrollTop / container.clientHeight);
-    setCurrent(Math.max(0, Math.min(ordered.length - 1, idx)));
-  }, [ordered.length]);
+    const clamped = Math.max(0, Math.min(ordered.length - 1, idx));
+    setCurrent(clamped);
+    const clip = ordered[clamped];
+    if (clip?.id !== undefined) savePosition(clip.id, clip.start);
+  }, [ordered, savePosition]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -277,9 +302,9 @@ function FeedClip({ clip, index, active, soundOn, onSoundChange, series, setting
   // Keep the feed's position (throttled) per mode — story and shuffle never
   // share a position. A clip never auto-advances; playback stops at its end.
   const saveResume = useCallback(
-    (clipId: number, t: number) => {
+    (clipId: number, t: number, force = false) => {
       const now = Date.now();
-      if (now - lastSaveRef.current < 3000) return;
+      if (!force && now - lastSaveRef.current < 3000) return;
       lastSaveRef.current = now;
       try {
         const store = readResume();
@@ -304,6 +329,9 @@ function FeedClip({ clip, index, active, soundOn, onSoundChange, series, setting
       } else {
         video.pause();
         setPaused(true);
+        // A finished clip must be saved too — no more timeupdate events will
+        // fire, and the throttled saves may have stopped short of the end.
+        if (clip.id !== undefined) saveResume(clip.id, clip.end, true);
       }
     }
   }, [clip, saveResume, settings?.autoReplay]);
